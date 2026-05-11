@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>A Very Important Proposal 📈</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+    :root {
+      --green: #16a34a;
+      --green-light: #dcfce7;
+      --green-border: #86efac;
+      --red: #dc2626;
+      --red-light: #fee2e2;
+      --red-border: #fca5a5;
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --muted: #64748b;
+      --accent: #6366f1;
+      --accent-light: #eef2ff;
+      --shadow: rgba(15,23,42,0.08);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; overflow: hidden; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      padding-top: 30px;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: radial-gradient(circle, #cbd5e1 1px, transparent 1px);
+      background-size: 28px 28px;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.4;
+    }
+
+    /* ── Ticker ── */
+    .ticker-bar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      background: #fff;
+      border-bottom: 1px solid var(--border);
+      padding: 6px 0;
+      overflow: hidden;
+      z-index: 100;
+      box-shadow: 0 1px 4px var(--shadow);
+    }
+    .ticker-inner {
+      display: flex;
+      gap: 36px;
+      animation: ticker 25s linear infinite;
+      white-space: nowrap;
+    }
+    .ticker-item { font-size: 11px; font-weight: 600; letter-spacing: 0.4px; }
+    .ticker-item .symbol { color: var(--muted); margin-right: 4px; }
+    .ticker-item .up   { color: var(--green); }
+    .ticker-item .down { color: var(--red); }
+    @keyframes ticker {
+      0%   { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+
+    /* ── Layout ── */
+    .container {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 580px;
+      padding: 0 14px;
+      transform-origin: center center;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px 22px 14px;
+      box-shadow: 0 4px 6px var(--shadow), 0 20px 40px rgba(15,23,42,0.06);
+    }
+
+    /* ── Top status ── */
+    .top-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+    .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 0 3px var(--green-light);
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 3px var(--green-light); }
+      50%       { box-shadow: 0 0 0 6px rgba(22,163,74,0.12); }
+    }
+
+    /* ── Symbol + Price (same size) ── */
+    .symbol-row {
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+      line-height: 1.1;
+      margin-bottom: 6px;
+    }
+    .symbol-row .sep { color: var(--border); margin: 0 6px; font-weight: 400; }
+    .symbol-row .sub { color: var(--muted); font-size: 14px; font-weight: 600; }
+
+    .price-row {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      margin-bottom: 4px;
+    }
+    .price-main {
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: -1px;
+      line-height: 1;
+    }
+    .badge {
+      background: var(--green-light);
+      color: var(--green);
+      border: 1px solid var(--green-border);
+      border-radius: 5px;
+      padding: 2px 8px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .change-sub {
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    /* ── Chart ── */
+    .chart-wrap {
+      margin: 0 -22px 12px;
+      height: 70px;
+      overflow: hidden;
+      background: linear-gradient(to bottom, #f0fdf4 0%, transparent 100%);
+      position: relative;
+    }
+    .chart-wrap svg { width: 100%; height: 100%; }
+
+    /* ── Stats grid ── */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+    .stat-box {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 7px 9px;
+    }
+    .stat-label {
+      font-size: 8.5px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 3px;
+    }
+    .stat-value {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--text);
+    }
+    .stat-value.green  { color: var(--green); }
+    .stat-value.red    { color: var(--red); }
+    .stat-value.accent { color: var(--accent); }
+
+    /* ── Divider ── */
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 10px 0;
+    }
+
+    /* ── Two column: Eniola + MOJ ── */
+    .issuers {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .issuer-box {
+      border-radius: 10px;
+      padding: 8px 10px;
+    }
+    .issuer-box.green-box {
+      background: linear-gradient(135deg,#f0fdf4,#dcfce7);
+      border: 1px solid var(--green-border);
+    }
+    .issuer-box.blue-box {
+      background: linear-gradient(135deg,#eef2ff,#e0e7ff);
+      border: 1px solid #c7d2fe;
+    }
+    .issuer-title {
+      font-size: 8.5px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .issuer-stats {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .issuer-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+    }
+    .issuer-row .lbl { color: var(--muted); font-weight: 500; }
+    .issuer-row .val { font-weight: 800; }
+
+    /* ── Question ── */
+    .question {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    .question h1 {
+      font-size: 20px;
+      font-weight: 900;
+      letter-spacing: -0.4px;
+      line-height: 1.2;
+      margin-bottom: 2px;
+    }
+    .question h1 em {
+      font-style: normal;
+      background: linear-gradient(135deg, #6366f1, #a855f7);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .question p {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    /* ── Buttons ── */
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      position: relative;
+    }
+    .btn {
+      border: none;
+      border-radius: 10px;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      padding: 11px 0;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+      flex: 1;
+    }
+    .btn:active { transform: scale(0.97) !important; }
+    .btn-yes {
+      background: linear-gradient(135deg, #16a34a, #15803d);
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(22,163,74,0.35);
+    }
+    .btn-yes:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(22,163,74,0.4); }
+    .btn-no {
+      background: var(--red-light);
+      color: var(--red);
+      border: 1px solid var(--red-border);
+    }
+
+    .disclaimer {
+      margin-top: 6px;
+      font-size: 9px;
+      color: #94a3b8;
+      text-align: center;
+      line-height: 1.4;
+    }
+
+    /* ── Name styles ── */
+    .name-eniola {
+      font-weight: 900;
+      background: linear-gradient(135deg, #f43f5e, #ec4899, #a855f7);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .name-moj {
+      font-weight: 900;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6, #06b6d4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* ── Success ── */
+    #success {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(248,250,252,0.88);
+      z-index: 999;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      backdrop-filter: blur(8px);
+    }
+    #success.show { display: flex; }
+    .success-card {
+      background: #fff;
+      border: 1px solid var(--green-border);
+      border-radius: 24px;
+      padding: 44px 52px;
+      text-align: center;
+      box-shadow: 0 0 0 6px var(--green-light), 0 20px 60px rgba(22,163,74,0.15);
+      animation: popIn 0.5s cubic-bezier(0.34,1.56,0.64,1);
+      max-width: 380px;
+    }
+    @keyframes popIn {
+      from { transform: scale(0.5); opacity: 0; }
+      to   { transform: scale(1);   opacity: 1; }
+    }
+    .success-emoji { font-size: 56px; margin-bottom: 12px; }
+    .success-card h2 { font-size: 24px; font-weight: 800; color: var(--green); margin-bottom: 8px; }
+    .success-card p  { color: var(--muted); font-size: 13px; line-height: 1.6; }
+    .portfolio-line {
+      margin-top: 14px;
+      background: var(--green-light);
+      border: 1px solid var(--green-border);
+      border-radius: 10px;
+      padding: 9px 14px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--green);
+    }
+
+    /* ── Petals ── */
+    .petal {
+      position: fixed;
+      top: -40px;
+      animation: petalFall linear infinite;
+      pointer-events: none;
+      z-index: 1;
+      user-select: none;
+    }
+    @keyframes petalFall {
+      0%   { transform: translateY(0) rotate(0deg);   opacity: 0; }
+      10%  { opacity: 0.7; }
+      90%  { opacity: 0.5; }
+      100% { transform: translateY(110vh) rotate(360deg); opacity: 0; }
+    }
+
+    /* ── Confetti ── */
+    .confetti-piece {
+      position: fixed;
+      animation: confettiFall linear forwards;
+      z-index: 1000;
+    }
+    @keyframes confettiFall {
+      0%   { transform: translateY(-20px) rotate(0deg);   opacity: 1; }
+      100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="ticker-bar">
+  <div class="ticker-inner" id="ticker"></div>
+</div>
+
+<div class="container" id="container">
+  <div class="card">
+
+    <div class="top-label">
+      <div class="dot"></div>
+      NYSE:ENIOLA·MOJ · LIVE · Q2 2026
+    </div>
+
+    <!-- Big symbol name - same visual weight as price -->
+    <div class="symbol-row">
+      <span class="name-eniola">ENIOLA</span>
+      <span class="sep">/</span>
+      <span class="name-moj">MOJ</span>
+      <span class="sub">· All-Time High 🚀</span>
+    </div>
+
+    <div class="price-row">
+      <div class="price-main">❤️❤️❤️</div>
+      <div class="badge">▲ +2,847.3%</div>
+    </div>
+    <div class="change-sub">Parabolic breakout · The moment I met <span class="name-eniola">Eniola</span></div>
+
+    <!-- Chart -->
+    <div class="chart-wrap">
+      <svg viewBox="0 0 760 70" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%"   stop-color="#16a34a" stop-opacity="0.2"/>
+            <stop offset="100%" stop-color="#16a34a" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <!-- Sharp spikes: L commands for jagged peaks & pullbacks, then explosive ATH -->
+        <path d="M0,66 L18,65 L30,62 L42,64 L55,58 L62,61 L75,55 L82,60 L95,63 L108,61 L118,56 L128,59 L140,52 L148,56 L160,49 L168,54 L180,57 L192,55 L204,50 L214,53 L226,46 L234,50 L246,44 L254,48 L266,53 L278,51 L288,46 L298,49 L310,42 L318,46 L330,39 L338,43 L350,35 L358,40 L370,43 L382,41 L392,36 L402,39 L414,31 L422,35 L433,27 L440,31 L452,28 L460,24 L468,18 L474,10 L480,4 L488,2 L500,1 L570,1 L760,1 L760,70 L0,70 Z"
+              fill="url(#g)"/>
+        <path d="M0,66 L18,65 L30,62 L42,64 L55,58 L62,61 L75,55 L82,60 L95,63 L108,61 L118,56 L128,59 L140,52 L148,56 L160,49 L168,54 L180,57 L192,55 L204,50 L214,53 L226,46 L234,50 L246,44 L254,48 L266,53 L278,51 L288,46 L298,49 L310,42 L318,46 L330,39 L338,43 L350,35 L358,40 L370,43 L382,41 L392,36 L402,39 L414,31 L422,35 L433,27 L440,31 L452,28 L460,24 L468,18 L474,10 L480,4 L488,2 L500,1 L570,1 L760,1"
+              fill="none" stroke="#16a34a" stroke-width="2" stroke-linejoin="miter"/>
+        <!-- Peak markers -->
+        <circle cx="55"  cy="58" r="2" fill="#16a34a" opacity="0.55"/>
+        <circle cx="140" cy="52" r="2" fill="#16a34a" opacity="0.55"/>
+        <circle cx="226" cy="46" r="2" fill="#16a34a" opacity="0.6"/>
+        <circle cx="310" cy="42" r="2.5" fill="#16a34a" opacity="0.65"/>
+        <circle cx="414" cy="31" r="2.5" fill="#16a34a" opacity="0.7"/>
+        <!-- ATH -->
+        <text x="502" y="13" font-family="Inter,sans-serif" font-size="9" font-weight="700" fill="#16a34a" opacity="0.9">🔥 ATH</text>
+        <circle cx="760" cy="1" r="4" fill="#16a34a" opacity="0.9"/>
+        <circle cx="760" cy="1" r="9" fill="#16a34a" opacity="0.15"/>
+      </svg>
+    </div>
+
+    <!-- Stats - 4 realistic columns -->
+    <div class="stats">
+      <div class="stat-box">
+        <div class="stat-label">52-wk High</div>
+        <div class="stat-value green">Right Now 🔥</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Volatility</div>
+        <div class="stat-value green">Very Low</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Analyst Rating</div>
+        <div class="stat-value accent">Strong Buy</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Risk Score</div>
+        <div class="stat-value green">2 / 10 ✅</div>
+      </div>
+    </div>
+
+    <!-- ATH note -->
+    <div style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:1px solid #86efac;border-radius:9px;padding:8px 12px;margin-bottom:10px;font-size:11px;font-weight:600;color:#0f172a;line-height:1.5;">
+      📈 <strong><span class="name-eniola">Eniola</span> has broken every happiness record</strong> - the parabolic breakout began the moment she arrived. Analysts confirm: <em style="color:#16a34a;">this is not a drill.</em>
+    </div>
+
+    <hr class="divider"/>
+
+    <!-- Eniola + MOJ side by side -->
+    <div class="issuers">
+      <div class="issuer-box green-box">
+        <div class="issuer-title" style="color:#16a34a;">📊 <span class="name-eniola">Eniola</span></div>
+        <div class="issuer-stats">
+          <div class="issuer-row"><span class="lbl">Vibe Index</span><span class="val" style="color:#16a34a;">AAA+ 💫</span></div>
+          <div class="issuer-row"><span class="lbl">Smile Rate</span><span class="val" style="color:#16a34a;">100% 😊</span></div>
+          <div class="issuer-row"><span class="lbl">ATH Catalyst</span><span class="val" style="color:#16a34a;">Yes ✅</span></div>
+          <div class="issuer-row"><span class="lbl">Warmth</span><span class="val" style="color:#16a34a;">Off Charts ❤️</span></div>
+        </div>
+      </div>
+      <div class="issuer-box blue-box">
+        <div class="issuer-title" style="color:var(--accent);">📋 <span class="name-moj">MOJ</span></div>
+        <div class="issuer-stats">
+          <div class="issuer-row"><span class="lbl">Loyalty</span><span class="val" style="color:var(--accent);">100% 🔐</span></div>
+          <div class="issuer-row"><span class="lbl">Effort</span><span class="val" style="color:var(--accent);">Max 💪</span></div>
+          <div class="issuer-row"><span class="lbl">Red Flags</span><span class="val" style="color:var(--accent);">Zero 🌟🌟🌟</span></div>
+          <div class="issuer-row"><span class="lbl">For Eniola</span><span class="val" style="color:var(--accent);">Always & Forever 💙</span></div>
+        </div>
+      </div>
+    </div>
+
+    <hr class="divider"/>
+
+    <div class="question">
+      <h1><span class="name-eniola">Eniola</span>, will you be my <em>girlfriend?</em> 💜</h1>
+      <p>A once-in-a-lifetime IPO - the fundamentals have <strong style="color:#0f172a;">never, ever looked this good.</strong></p>
+    </div>
+
+    <div class="btn-row" id="btnRow">
+      <button class="btn btn-yes" onclick="handleYes()">📈 Yes, I'm Bullish!</button>
+      <button class="btn btn-no" id="noBtn">📉 No</button>
+    </div>
+
+    <p class="disclaimer">* Past performance of feelings is not indicative of future results. The "No" button is experiencing historic volatility.</p>
+
+  </div>
+</div>
+
+<!-- Success -->
+<div id="success">
+  <div class="success-card">
+    <div class="success-emoji">🚀💚</div>
+    <h2>POSITION OPENED!</h2>
+    <p><span class="name-eniola">Eniola</span> - best investment of your life. 📊<br/>
+    <span style="font-size:12px;color:#16a34a;font-weight:600;">New ATH: Happiness ∞</span></p>
+    <div class="portfolio-line">Portfolio: +1 Girlfriend (<span class="name-eniola" style="-webkit-text-fill-color:unset;color:#16a34a;">Eniola</span>) ▲▲▲</div>
+  </div>
+</div>
+
+<script>
+  // Ticker
+  const tickers = [
+    {s:'HEART',v:'+100.00%',up:true},{s:'VIBE',v:'+42.0%',up:true},
+    {s:'LOVE',v:'+999.9%',up:true},{s:'SMILE',v:'+88.8%',up:true},
+    {s:'TRUST',v:'+55.3%',up:true},{s:'DATE',v:'+73.1%',up:true},
+    {s:'HUGS',v:'+210.0%',up:true},{s:'KISSES',v:'+180.5%',up:true},
+    {s:'TEARS',v:'-99.9%',up:false},{s:'DOUBT',v:'-100.0%',up:false},
+  ];
+  const tickerEl = document.getElementById('ticker');
+  [...tickers,...tickers].forEach(t => {
+    const d = document.createElement('div');
+    d.className = 'ticker-item';
+    d.innerHTML = `<span class="symbol">${t.s}</span><span class="${t.up?'up':'down'}">${t.v}</span>`;
+    tickerEl.appendChild(d);
+  });
+
+  // No button run-away
+  const noBtn = document.getElementById('noBtn');
+  let lifted = false, noCount = 0;
+  const funnyLabels = [
+    '📉 No',
+    '🙅‍♀️ Not today!',
+    '🌚 Try again bro',
+    '🏃‍♂️ Can\'t catch me!',
+    '💅 Lol no',
+    '🌪️ I\'m outta here',
+    '🚀 Gone to the moon',
+    '🦅 Free like a bird',
+    '🎭 Wrong answer key',
+    '🔮 The stars say YES',
+    '🌊 This button surfs',
+    '🦄 Unicorns say YES',
+    '☁️ I\'m on a cloud',
+    '🎪 Step right up!',
+    '🍀 Luck says YES',
+  ];
+
+  // Record original position ONCE before any transform
+  let origRect = null;
+  function getOrigRect() {
+    if (!origRect) {
+      noBtn.style.transform = 'none';
+      origRect = noBtn.getBoundingClientRect();
+    }
+    return origRect;
+  }
+
+  function runAway(e) {
+    e.preventDefault();
+    noBtn.textContent = funnyLabels[noCount % funnyLabels.length];
+    noCount++;
+
+    const r   = getOrigRect();
+    const vw  = window.innerWidth;
+    const vh  = window.innerHeight;
+    const pad = 12;
+
+    const angle = Math.random() * 2 * Math.PI;
+    const sinA  = Math.sin(angle);
+    const dist  = sinA > 0
+      ? 50  + Math.random() * 25    // downward: 50–75px
+      : 200 + Math.random() * 100;  // up/left/right: 200–300px
+
+    let dx = Math.round(Math.cos(angle) * dist);
+    let dy = Math.round(sinA * dist);
+
+    // Clamp relative to ORIGINAL position so transforms don't accumulate
+    const newLeft = r.left + dx;
+    const newTop  = r.top  + dy;
+    if (newLeft < pad)                        dx += pad - newLeft;
+    if (newTop  < 35 + pad)                   dy += (35 + pad) - newTop;
+    if (newLeft + r.width  > vw - pad)        dx -= (newLeft + r.width)  - (vw - pad);
+    if (newTop  + r.height > vh - pad)        dy -= (newTop  + r.height) - (vh - pad);
+
+    noBtn.style.transition = 'transform 0.25s cubic-bezier(0.34,1.56,0.64,1)';
+    noBtn.style.transform  = 'translate(' + dx + 'px, ' + dy + 'px)';
+  }
+  noBtn.addEventListener('mouseenter', runAway);
+  noBtn.addEventListener('touchstart', runAway, {passive: false});
+
+  // Yes
+  function handleYes() {
+    launchConfetti();
+    setTimeout(() => document.getElementById('success').classList.add('show'), 300);
+  }
+  function launchConfetti() {
+    const colors=['#16a34a','#6366f1','#a855f7','#f59e0b','#ec4899','#0ea5e9'];
+    for(let i=0;i<120;i++){
+      const el=document.createElement('div');
+      el.className='confetti-piece';
+      el.style.cssText=`left:${Math.random()*100}vw;top:-14px;background:${colors[Math.floor(Math.random()*colors.length)]};width:${6+Math.random()*10}px;height:${5+Math.random()*8}px;border-radius:${Math.random()>.5?'50%':'3px'};animation-duration:${1.8+Math.random()*2.2}s;animation-delay:${Math.random()*.9}s;`;
+      document.body.appendChild(el);
+      el.addEventListener('animationend',()=>el.remove());
+    }
+  }
+  document.getElementById('success').addEventListener('click',()=>document.getElementById('success').classList.remove('show'));
+
+  // Auto-fit
+  function fitCard() {
+    const container = document.getElementById('container');
+    container.style.transform = 'scale(1)';
+    const available = window.innerHeight - 30 - 8;
+    const cardH = container.offsetHeight;
+    if (cardH > available) container.style.transform = `scale(${available/cardH})`;
+  }
+  window.addEventListener('load', fitCard);
+  window.addEventListener('resize', fitCard);
+  setTimeout(fitCard, 150);
+
+  // Petals
+  const petals = ['❤️','🌸','💕','🌺','💗','🌷','💖','💓'];
+  function spawnPetal() {
+    const el = document.createElement('div');
+    el.className = 'petal';
+    el.textContent = petals[Math.floor(Math.random()*petals.length)];
+    el.style.fontSize = (10+Math.random()*14)+'px';
+    el.style.left = (Math.random()*100)+'vw';
+    const dur = 6+Math.random()*8;
+    el.style.animationDuration = dur+'s';
+    el.style.animationDelay = (Math.random()*3)+'s';
+    document.body.appendChild(el);
+    setTimeout(()=>el.remove(),(dur+4)*1000);
+  }
+  for(let i=0;i<16;i++) spawnPetal();
+  setInterval(spawnPetal, 700);
+</script>
+</body>
+</html>
