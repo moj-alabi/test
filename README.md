@@ -113,26 +113,29 @@ All traffic (HTTP and HTTPS) is routed through this proxy. TLS certificate verif
 
 ---
 
-## Evasion Profile
+## Flood Preset
 
-After entering flood parameters you pick an **evasion profile**. This controls the User-Agent pool, header order, and query-string injection per request:
+After selecting an attack vector, you pick a **Flood Preset** — a single numbered choice that sets everything at once (connections, RPS, duration, UA pool, header shuffle, and query-string injection). No separate prompts.
 
 ```
-  ── Evasion Profile ──────────────────────────────────────────
-   1.  rotate           Random mix of all profiles per request
-   2.  legit_desktop    Legitimate desktop browsers only
-   3.  legit_mobile     Legitimate mobile browsers only
-   4.  spoofed_bots     Spoofed search/social crawlers
-   5.  spoofed_evasion  Evasion strings + random query params always
+  Preset                           Conns    RPS   Dur  UA Profile          Shuffle   QS
+  ──────────────────────────────────────────────────────────────────────────────────────
+   1. Light  – legit desktop          25     50   30s  legit_desktop          ✗      off
+   2. Medium – legit desktop          50    100   60s  legit_desktop          ✗      off
+   3. Heavy  – legit desktop         100    250   60s  legit_desktop          ✗      off
+   4. Light  – legit mobile           25     50   30s  legit_mobile           ✗      off
+   5. Medium – legit mobile           50    100   60s  legit_mobile           ✗      off
+   6. Light  – spoofed bots           25     50   30s  spoofed_bots           ✗      off
+   7. Medium – spoofed bots + shuffle 50    100   60s  spoofed_bots           ✓      random
+   8. Heavy  – full evasion + QS     100    250   60s  spoofed_evasion        ✓      always
+   9. Blitz  – rotate all + shuffle  150    500   30s  rotate                 ✓      random
+  10. Custom – set your own values     –      –    –   you choose             ?       ?
 ```
 
-| Profile | UA pool | Header shuffle | Query strings |
-|---------|---------|---------------|---------------|
-| `rotate` | All pools mixed | ✅ random per request | 50% chance |
-| `legit_desktop` | Chrome/Firefox/Edge/Safari desktop | ✅ random per request | 25% chance |
-| `legit_mobile` | Chrome/Safari iOS+Android | ✅ random per request | 25% chance |
-| `spoofed_bots` | Googlebot, Bingbot, Facebookbot, Twitterbot, etc. | ✅ random per request | 25% chance |
-| `spoofed_evasion` | curl, wget, blank UA, oversized UA, old MSIE | ✅ random per request | Always injected |
+**Custom** (option 10) asks you to enter connections, RPS, duration, then lets you pick:
+- UA profile (rotate / legit_desktop / legit_mobile / spoofed_bots / spoofed_evasion)
+- Header shuffle on/off
+- Query-string injection (off / random 50% / always)
 
 ### What gets randomised per request
 
@@ -140,13 +143,13 @@ After entering flood parameters you pick an **evasion profile**. This controls t
 - **Accept** — rotates across 7 real-browser Accept values
 - **Accept-Language** — rotates across 11 locales (en-US, fr-FR, zh-CN, ar-SA, etc.)
 - **Connection** — randomly `keep-alive` or `close`
-- **Header order** — shuffled on every request (after User-Agent)
-- **Extra headers (0–4 randomly injected):**
+- **Header order** — shuffled per request **only when the preset has shuffle=✓**
+- **Extra headers (0–4 randomly injected per request):**
   - `X-Forwarded-For`, `X-Real-IP`, `X-Originating-IP` (random IPs)
   - `Referer` (Google, Bing, Twitter, Facebook, DuckDuckGo)
   - `Cache-Control`, `Pragma`, `DNT`
   - `Sec-Fetch-Mode`, `Sec-Fetch-Site`, `Sec-Fetch-Dest`
-- **Query string** — random `key=value` pairs appended to URL (frequency depends on profile)
+- **Query string** — random `key=value` pairs appended to URL per the preset's QS setting
 
 ---
 

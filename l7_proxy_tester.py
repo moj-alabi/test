@@ -367,8 +367,10 @@ def test_latency(target_url, samples=10):
 
 _BODY_METHODS = {"POST", "PUT", "PATCH"}
 
-# ── Evasion profile: current active profile (set by prompt_evasion_profile) ───
-_EVASION_PROFILE = ["rotate"]   # mutable container so workers see updates
+# ── Active flood config (set from preset menu) ────────────────────────────────
+_EVASION_PROFILE   = ["rotate"]  # UA pool key
+_HEADER_SHUFFLE    = [False]     # shuffle header order per request
+_QS_INJECT         = ["off"]     # "off" | "random" | "always"
 
 # ─────────────────────────────────────────────────────────────────────────────
 # User-Agent library  (legitimate + spoofed categories)
@@ -508,8 +510,8 @@ def _rand_qs(n=3):
 def _build_headers(profile):
     # type: (str) -> List[Tuple[str, str]]
     """
-    Build a shuffled header list for the given evasion profile.
-    Returns a list of (name, value) tuples.
+    Build a header list for the given evasion profile.
+    Header order is shuffled only when _HEADER_SHUFFLE[0] is True.
     """
     pool = _UA_POOLS.get(profile, _UA_POOLS["rotate"])
     ua   = random.choice(pool) if pool else "Mozilla/5.0"
@@ -528,23 +530,27 @@ def _build_headers(profile):
         extras.append((hdr_name, hdr_fn()))
 
     combined = core + extras
-    # Shuffle everything except User-Agent (keep it first for realism)
-    ua_hdr = combined[:1]
-    rest   = combined[1:]
-    random.shuffle(rest)
-    return ua_hdr + rest
+
+    if _HEADER_SHUFFLE[0]:
+        # Shuffle everything except User-Agent (keep it first)
+        ua_hdr = combined[:1]
+        rest   = combined[1:]
+        random.shuffle(rest)
+        return ua_hdr + rest
+
+    return combined
 
 
-def _inject_qs(url, profile):
-    # type: (str, str) -> str
-    """Optionally append random query-string params to the URL."""
-    if profile == "spoofed_evasion":
-        # Always inject for evasion profile
+def _inject_qs(url):
+    # type: (str) -> str
+    """Optionally append random query-string params based on _QS_INJECT setting."""
+    mode = _QS_INJECT[0]
+    if mode == "off":
+        return url
+    if mode == "always":
         inject = True
-    elif profile == "rotate":
+    else:  # "random"
         inject = random.random() < 0.5
-    else:
-        inject = random.random() < 0.25
 
     if not inject:
         return url
@@ -560,7 +566,7 @@ def _single_request(target_url, idx, method, profile="rotate"):
     opener.addheaders = _build_headers(profile)
 
     # Optionally mutate URL with random query strings
-    req_url = _inject_qs(target_url, profile)
+    req_url = _inject_qs(target_url)
 
     t0 = time.time()
     try:
@@ -855,57 +861,116 @@ def show_menu():
             sys.exit(0)
 
 
-# Evasion profile options: (display label, pool key, description)
-_PROFILE_MENU = [
-    ("rotate",         "rotate",         "Random mix of all profiles per request"),
-    ("legit_desktop",  "legit_desktop",  "Legitimate desktop browsers only"),
-    ("legit_mobile",   "legit_mobile",   "Legitimate mobile browsers only"),
-    ("spoofed_bots",   "spoofed_bots",   "Spoofed search/social crawlers"),
-    ("spoofed_evasion","spoofed_evasion","Evasion strings + random query params always"),
+# ─────────────────────────────────────────────────────────────────────────────
+# Flood Preset table
+# Each entry: (label, conns, rps, duration_s, ua_profile, hdr_shuffle, qs_mode)
+# Last entry is "custom" – will prompt for conns/rps/duration + profile choices
+# ─────────────────────────────────────────────────────────────────────────────
+_PRESETS = [
+    # label                           conns  rps   dur   ua_profile        shuffle  qs
+    ("Light  – legit desktop",           25,  50,   30, "legit_desktop",   False, "off"),
+    ("Medium – legit desktop",           50, 100,   60, "legit_desktop",   False, "off"),
+    ("Heavy  – legit desktop",          100, 250,   60, "legit_desktop",   False, "off"),
+    ("Light  – legit mobile",            25,  50,   30, "legit_mobile",    False, "off"),
+    ("Medium – legit mobile",            50, 100,   60, "legit_mobile",    False, "off"),
+    ("Light  – spoofed bots",            25,  50,   30, "spoofed_bots",    False, "off"),
+    ("Medium – spoofed bots + shuffle",  50, 100,   60, "spoofed_bots",    True,  "random"),
+    ("Heavy  – full evasion + QS",      100, 250,   60, "spoofed_evasion", True,  "always"),
+    ("Blitz  – rotate all + shuffle",   150, 500,   30, "rotate",          True,  "random"),
+    ("Custom – set your own values",      0,   0,    0, "",                False, "off"),
 ]
 
 
-def show_profile_menu():
-    # type: () -> str
-    """Show the evasion profile menu and return the chosen profile key."""
-    print("\n{}{}  \u2500\u2500 Evasion Profile \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500{}".format(BOLD, CYAN, RESET))
-    for i, (key, _, desc) in enumerate(_PROFILE_MENU, 1):
-        marker = "{}*{}".format(GREEN, RESET) if key == "rotate" else " "
-        print("  {}{}  {}{:>2}.{} {}{:<20}{} {}{}{}".format(
-            BOLD, CYAN, RESET,
-            BOLD, i, RESET,
-            CYAN, key, RESET,
-            DIM, desc, RESET,
-        ))
+def show_preset_menu():
+    # type: () -> Tuple[int, float, float]
+    """
+    Show the unified flood preset table.
+    One selection sets conns, RPS, duration, UA profile, header shuffle, and QS.
+    Returns (workers, rps, duration).
+    """
+    hdr = "{:<34} {:>5} {:>6} {:>5}  {:<18} {:^7} {:^8}".format(
+        "Preset", "Conns", "RPS", "Dur", "UA Profile", "Shuffle", "QS")
+    div = "\u2500" * 90
+
+    print("\n{}{}  \u2500\u2500 Flood Preset \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500{}".format(BOLD, CYAN, RESET))
+    print("  {}{}{}".format(DIM, hdr, RESET))
+    print("  {}{}{}".format(DIM, div, RESET))
+
+    for i, (label, conns, rps, dur, ua, shuf, qs) in enumerate(_PRESETS, 1):
+        is_custom = (conns == 0)
+        conns_s = "–" if is_custom else str(conns)
+        rps_s   = "–" if is_custom else str(rps)
+        dur_s   = "–" if is_custom else "{}s".format(dur)
+        ua_s    = "you choose" if is_custom else ua
+        shuf_s  = "–" if is_custom else ("\u2713" if shuf else "\u2717")
+        qs_s    = "–" if is_custom else qs
+        row = "{:>2}. {:<30} {:>5} {:>6} {:>5}  {:<18} {:^7} {:^8}".format(
+            i, label, conns_s, rps_s, dur_s, ua_s, shuf_s, qs_s)
+        colour = MAGENTA if is_custom else CYAN
+        print("  {}{}{}".format(colour, row, RESET))
+
     while True:
         try:
-            raw = input("  {}Choose profile (1\u2013{}) [1]: {}".format(
-                BOLD, len(_PROFILE_MENU), RESET)).strip()
+            raw = input("\n  {}Select preset (1\u2013{}): {}".format(
+                BOLD, len(_PRESETS), RESET)).strip()
             if not raw:
-                return "rotate"
+                continue
             idx = int(raw) - 1
-            if 0 <= idx < len(_PROFILE_MENU):
-                chosen = _PROFILE_MENU[idx][0]
-                print("  {}\u2714  Profile:{} {}{}{}".format(GREEN, RESET, BOLD, chosen, RESET))
-                return chosen
-            else:
-                warn("Enter 1\u2013{}".format(len(_PROFILE_MENU)))
+            if not (0 <= idx < len(_PRESETS)):
+                warn("Enter 1\u2013{}".format(len(_PRESETS)))
+                continue
         except (ValueError, KeyboardInterrupt, EOFError):
-            return "rotate"
+            print("\nAborted.")
+            sys.exit(0)
 
+        label, conns, rps, dur, ua, shuf, qs = _PRESETS[idx]
 
-def prompt_flood_params():
-    # type: () -> Tuple[int, float, float]
-    """Ask for concurrent connections, target RPS, duration, and evasion profile."""
-    print("\n{}{}  \u2500\u2500 Flood Parameters \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500{}".format(
-        BOLD, CYAN, RESET))
-    workers  = _prompt_int("Concurrent connections (workers)", 50)
-    rps      = _prompt_float("Target RPS (requests/sec)",       100.0)
-    duration = _prompt_float("Duration (seconds)",               30.0)
-    profile  = show_profile_menu()
-    _EVASION_PROFILE[0] = profile
-    info("Evasion profile set to: {}{}{}".format(BOLD, profile, RESET))
-    return workers, rps, duration
+        if conns == 0:
+            # Custom path – ask for values + profile
+            print("\n{}{}  \u2500\u2500 Custom Parameters \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500{}".format(BOLD, CYAN, RESET))
+            conns = _prompt_int("Concurrent connections", 50)
+            rps   = _prompt_float("Target RPS", 100.0)
+            dur   = _prompt_float("Duration (seconds)", 30.0)
+
+            # UA profile sub-menu
+            print("\n  {}UA Profile:{} (1) rotate  (2) legit_desktop  (3) legit_mobile  (4) spoofed_bots  (5) spoofed_evasion".format(BOLD, RESET))
+            _ua_opts = ["rotate", "legit_desktop", "legit_mobile", "spoofed_bots", "spoofed_evasion"]
+            try:
+                ua_raw = input("  {}Choice [1]: {}".format(BOLD, RESET)).strip()
+                ua_idx = int(ua_raw) - 1 if ua_raw else 0
+                ua = _ua_opts[ua_idx] if 0 <= ua_idx < len(_ua_opts) else "rotate"
+            except (ValueError, KeyboardInterrupt, EOFError):
+                ua = "rotate"
+
+            # Header shuffle
+            try:
+                shuf_raw = input("  {}Shuffle header order? (y/n) [n]: {}".format(BOLD, RESET)).strip().lower()
+                shuf = shuf_raw in ("y", "yes", "1")
+            except (KeyboardInterrupt, EOFError):
+                shuf = False
+
+            # QS inject
+            print("  {}Query-string inject:{} (1) off  (2) random 50%  (3) always".format(BOLD, RESET))
+            _qs_opts = ["off", "random", "always"]
+            try:
+                qs_raw = input("  {}Choice [1]: {}".format(BOLD, RESET)).strip()
+                qs_idx = int(qs_raw) - 1 if qs_raw else 0
+                qs = _qs_opts[qs_idx] if 0 <= qs_idx < len(_qs_opts) else "off"
+            except (ValueError, KeyboardInterrupt, EOFError):
+                qs = "off"
+
+        # Apply config
+        _EVASION_PROFILE[0] = ua
+        _HEADER_SHUFFLE[0]  = shuf
+        _QS_INJECT[0]       = qs
+
+        shuf_display = "{}on{}".format(GREEN, RESET) if shuf else "{}off{}".format(DIM, RESET)
+        print("\n  {}\u2714  Preset:{} {}{}{}".format(GREEN, RESET, BOLD, label, RESET))
+        info("UA profile : {}{}{}".format(BOLD, ua, RESET))
+        info("Hdr shuffle: {}".format(shuf_display))
+        info("QS inject  : {}{}{}".format(BOLD, qs, RESET))
+
+        return int(conns), float(rps), float(dur)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -967,7 +1032,7 @@ def main():
         print()
         return
 
-    workers, rps, duration = prompt_flood_params()
+    workers, rps, duration = show_preset_menu()
     print("\n{}  Workers : {}  |  RPS target : {:.0f}  |  Duration : {:.0f}s{}".format(
         DIM, workers, rps, duration, RESET))
 
