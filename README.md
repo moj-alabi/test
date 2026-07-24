@@ -113,54 +113,12 @@ All traffic (HTTP and HTTPS) is routed through this proxy. TLS certificate verif
 
 ---
 
-## Flood Preset
-
-After selecting an attack vector, you pick a **Flood Preset** — a single numbered choice that sets everything at once (connections, RPS, duration, UA pool, header shuffle, and query-string injection). No separate prompts.
-
-```
-  Preset                           Conns    RPS   Dur  UA Profile          Shuffle   QS
-  ──────────────────────────────────────────────────────────────────────────────────────
-   1. Light  – legit desktop          25     50   30s  legit_desktop          ✗      off
-   2. Medium – legit desktop          50    100   60s  legit_desktop          ✗      off
-   3. Heavy  – legit desktop         100    250   60s  legit_desktop          ✗      off
-   4. Light  – legit mobile           25     50   30s  legit_mobile           ✗      off
-   5. Medium – legit mobile           50    100   60s  legit_mobile           ✗      off
-   6. Light  – spoofed bots           25     50   30s  spoofed_bots           ✗      off
-   7. Medium – spoofed bots + shuffle 50    100   60s  spoofed_bots           ✓      random
-   8. Heavy  – full evasion + QS     100    250   60s  spoofed_evasion        ✓      always
-   9. Blitz  – rotate all + shuffle  150    500   30s  rotate                 ✓      random
-  10. Custom – set your own values     –      –    –   you choose             ?       ?
-```
-
-**Custom** (option 10) asks you to enter connections, RPS, duration, then lets you pick:
-- UA profile (rotate / legit_desktop / legit_mobile / spoofed_bots / spoofed_evasion)
-- Header shuffle on/off
-- Query-string injection (off / random 50% / always)
-
-### What gets randomised per request
-
-- **User-Agent** — drawn randomly from the chosen pool
-- **Accept** — rotates across 7 real-browser Accept values
-- **Accept-Language** — rotates across 11 locales (en-US, fr-FR, zh-CN, ar-SA, etc.)
-- **Connection** — randomly `keep-alive` or `close`
-- **Header order** — shuffled per request **only when the preset has shuffle=✓**
-- **Extra headers (0–4 randomly injected per request):**
-  - `X-Forwarded-For`, `X-Real-IP`, `X-Originating-IP` (random IPs)
-  - `Referer` (Google, Bing, Twitter, Facebook, DuckDuckGo)
-  - `Cache-Control`, `Pragma`, `DNT`
-  - `Sec-Fetch-Mode`, `Sec-Fetch-Site`, `Sec-Fetch-Dest`
-- **Query string** — random `key=value` pairs appended to URL per the preset's QS setting
-
----
-
 ## Features
 
 - ✅ Zero dependencies — pure Python stdlib
 - ✅ Fully interactive menu, no CLI flags to remember
 - ✅ Rate-limited flood engine (token bucket per RPS target)
-- ✅ 5 evasion profiles: legit desktop/mobile, spoofed bots, evasion strings, random mix
-- ✅ Per-request randomised UA, header order, Accept, Accept-Language, and extra headers
-- ✅ Random query-string injection to bypass caching / WAF fingerprinting
+- ✅ Rotating user-agent strings for realism
 - ✅ Live progress bar with real-time RPS counter
 - ✅ Latency percentiles (avg, p50, p90, p99)
 - ✅ HTTP status code breakdown per run
