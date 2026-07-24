@@ -113,12 +113,51 @@ All traffic (HTTP and HTTPS) is routed through this proxy. TLS certificate verif
 
 ---
 
+## Evasion Profile
+
+After entering flood parameters you pick an **evasion profile**. This controls the User-Agent pool, header order, and query-string injection per request:
+
+```
+  ── Evasion Profile ──────────────────────────────────────────
+   1.  rotate           Random mix of all profiles per request
+   2.  legit_desktop    Legitimate desktop browsers only
+   3.  legit_mobile     Legitimate mobile browsers only
+   4.  spoofed_bots     Spoofed search/social crawlers
+   5.  spoofed_evasion  Evasion strings + random query params always
+```
+
+| Profile | UA pool | Header shuffle | Query strings |
+|---------|---------|---------------|---------------|
+| `rotate` | All pools mixed | ✅ random per request | 50% chance |
+| `legit_desktop` | Chrome/Firefox/Edge/Safari desktop | ✅ random per request | 25% chance |
+| `legit_mobile` | Chrome/Safari iOS+Android | ✅ random per request | 25% chance |
+| `spoofed_bots` | Googlebot, Bingbot, Facebookbot, Twitterbot, etc. | ✅ random per request | 25% chance |
+| `spoofed_evasion` | curl, wget, blank UA, oversized UA, old MSIE | ✅ random per request | Always injected |
+
+### What gets randomised per request
+
+- **User-Agent** — drawn randomly from the chosen pool
+- **Accept** — rotates across 7 real-browser Accept values
+- **Accept-Language** — rotates across 11 locales (en-US, fr-FR, zh-CN, ar-SA, etc.)
+- **Connection** — randomly `keep-alive` or `close`
+- **Header order** — shuffled on every request (after User-Agent)
+- **Extra headers (0–4 randomly injected):**
+  - `X-Forwarded-For`, `X-Real-IP`, `X-Originating-IP` (random IPs)
+  - `Referer` (Google, Bing, Twitter, Facebook, DuckDuckGo)
+  - `Cache-Control`, `Pragma`, `DNT`
+  - `Sec-Fetch-Mode`, `Sec-Fetch-Site`, `Sec-Fetch-Dest`
+- **Query string** — random `key=value` pairs appended to URL (frequency depends on profile)
+
+---
+
 ## Features
 
 - ✅ Zero dependencies — pure Python stdlib
 - ✅ Fully interactive menu, no CLI flags to remember
 - ✅ Rate-limited flood engine (token bucket per RPS target)
-- ✅ Rotating user-agent strings for realism
+- ✅ 5 evasion profiles: legit desktop/mobile, spoofed bots, evasion strings, random mix
+- ✅ Per-request randomised UA, header order, Accept, Accept-Language, and extra headers
+- ✅ Random query-string injection to bypass caching / WAF fingerprinting
 - ✅ Live progress bar with real-time RPS counter
 - ✅ Latency percentiles (avg, p50, p90, p99)
 - ✅ HTTP status code breakdown per run
