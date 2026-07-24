@@ -1,206 +1,126 @@
 # L7 Proxy Test Suite
 
-A Python 3 tool for testing **Layer-7 (HTTP/HTTPS) application-layer behaviour**
-through a Squid HTTP proxy with residential proxies (ProxyChains).
-
-All traffic is routed through **`10.0.10.118:3128`** (Squid).
+A Python 3 tool for testing Layer-7 (HTTP/HTTPS) traffic through a Squid residential proxy at `10.0.10.118:3128`.
 
 ---
 
 ## Requirements
 
-- Python **3.10+** (uses `match`/`|` union syntax internally)
-- No third-party packages — stdlib only (`urllib`, `ssl`, `socket`, `concurrent.futures`)
-- Squid proxy running and reachable at `10.0.10.118:3128`
-
----
-
-## Installation
-
-```bash
-# Copy to your Kali lab box, then:
-chmod +x l7_proxy_tester.py
-```
-
-No `pip install` required.
-
----
-
-## Modes
-
-| Mode | Flag | Description |
-|------|------|-------------|
-| **Diagnostic** | *(default)* | 10 sequential L7 tests — egress IP, DNS, TLS, headers, etc. |
-| **Flood** | `--flood` | Concurrent HTTP request storm — measures real RPS & latency |
+- Python 3.7+ (no third-party packages — stdlib only)
+- A running Squid proxy at `10.0.10.118:3128`
 
 ---
 
 ## Usage
 
-### Diagnostic mode (default)
-
-Run all 10 sequential L7 tests against a target:
-
 ```bash
 python3 l7_proxy_tester.py
 ```
 
-You will be prompted:
+The script is fully interactive — no flags or command-line arguments needed.
 
-```
-Enter target URL (e.g. https://example.com or http://10.0.0.1):
-```
-
-Paste a full URL. If you omit the scheme (`http://` / `https://`) it defaults to `https://`.
+1. **Enter target URL** — e.g. `https://example.com` or `http://10.0.0.1`
+2. **Proxy reachability check** runs automatically
+3. **Select attack vector** from the numbered menu
+4. For flood modes, enter your **concurrent connections**, **target RPS**, and **duration**
 
 ---
 
-### Flood mode
+## Attack Vector Menu
 
-Send a burst of concurrent requests through the proxy to measure throughput and latency.
-
-```bash
-# Default: 500 requests, 50 concurrent workers, GET method
-python3 l7_proxy_tester.py --flood
-
-# Custom request count and worker count
-python3 l7_proxy_tester.py --flood -n 1000 -c 100
-
-# Choose a different HTTP method
-python3 l7_proxy_tester.py --flood -m POST
-python3 l7_proxy_tester.py --flood -m HEAD
-python3 l7_proxy_tester.py --flood -m PUT
-
-# Full custom example
-python3 l7_proxy_tester.py --flood -n 2000 -c 150 -m POST
+```
+  ┌─────────────────────────────────────────────┐
+  │          SELECT ATTACK VECTOR                │
+  ├─────────────────────────────────────────────┤
+  │   1. 🔍  Diagnostic (10 sequential tests)   │
+  │   2. 💥  GET Flood                          │
+  │   3. 💥  POST Flood                         │
+  │   4. 💥  HEAD Flood                         │
+  │   5. 💥  PUT Flood                          │
+  │   6. 💥  PATCH Flood                        │
+  │   7. 💥  DELETE Flood                       │
+  │   8. 💥  OPTIONS Flood                      │
+  │   9. ⚡  Multi-Vector (all methods at once) │
+  └─────────────────────────────────────────────┘
 ```
 
 ---
 
-## All CLI Flags
+## Modes
 
-| Flag | Long form | Default | Description |
-|------|-----------|---------|-------------|
-| | `--flood` | off | Enable flood/load-test mode |
-| `-n` | `--count` | `500` | Total number of requests to send (flood mode) |
-| `-c` | `--workers` | `50` | Number of concurrent threads (flood mode) |
-| `-m` | `--method` | `GET` | HTTP method: `GET` `POST` `HEAD` `PUT` `PATCH` `DELETE` `OPTIONS` |
+### 1 — Diagnostic
+Runs 10 sequential probe tests against the target:
 
----
+| # | Test |
+|---|------|
+| 1 | Proxy TCP reachability |
+| 2 | Egress IP leak check |
+| 3 | HTTP GET |
+| 4 | HTTP HEAD (security headers) |
+| 5 | HTTP OPTIONS (CORS/allowed methods) |
+| 6 | Redirect chain tracing |
+| 7 | DNS resolution |
+| 8 | TLS/SSL certificate info |
+| 9 | HTTP POST |
+| 10 | Latency benchmark (10× samples, min/avg/max/jitter) |
 
-## Diagnostic Tests (default mode)
+### 2–8 — Single-Method Flood
+Sends continuous requests using one HTTP method for a set duration.
 
-| # | Test | What it checks |
-|---|------|----------------|
-| 1 | **Proxy TCP reachability** | Squid is up and accepting connections on port 3128 |
-| 2 | **Egress IP leak check** | Confirms egress IP is the residential proxy, not your real IP |
-| 3 | **HTTP GET** | Full response: status code, body size, Server / Content-Type / X-Cache |
-| 4 | **HTTP HEAD** | Security headers: HSTS, CSP, X-Frame-Options, X-Powered-By, etc. |
-| 5 | **HTTP OPTIONS** | CORS posture: allowed methods, Access-Control-Allow-Origin |
-| 6 | **Redirect chain** | Follows every 3xx hop (up to 10 deep), logs each URL + status |
-| 7 | **DNS resolution** | Resolves the hostname and returns all A/AAAA records |
-| 8 | **TLS certificate** | TLS version, cipher suite, CN, issuer, validity dates via CONNECT tunnel |
-| 9 | **HTTP POST** | Sends a JSON probe body; shows how the server handles request bodies |
-| 10 | **Latency benchmark** | 10 timed HEAD requests → min / avg / max / jitter |
+**Prompted parameters:**
 
----
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| Concurrent connections | `50` | Number of parallel worker threads |
+| Target RPS | `100` | Requests per second to aim for |
+| Duration (seconds) | `30` | How long to run the flood |
 
-## Flood Mode Output
+**Live progress bar** shows elapsed time, success/fail counts, and actual RPS.
 
-A live progress bar shows real-time status while the flood runs:
+**Summary** includes total sent, throughput, and latency percentiles (avg / p50 / p90 / p99).
+
+### 9 — Multi-Vector Flood ⚡
+Fires **all 7 HTTP methods simultaneously** (GET, POST, HEAD, PUT, PATCH, DELETE, OPTIONS), each in its own thread pool.
+
+- Your worker and RPS values are split evenly across the 7 vectors
+- Each vector prints its own summary
+- A combined aggregate table is printed at the end:
 
 ```
-  [████████████████░░░░░░░░░░░░░░░░░░░░░░░░] 400/500  398✓ 2✗  42.3 RPS
-```
-
-Final summary:
-
-```
-  [+] Total sent     : 500
-  [+] Succeeded (2xx): 498
-  [!] Failed         : 2
-  [+] Wall time      : 11.83 s
-  [+] Throughput     : 42.3 RPS
-  [+] Latency avg    : 1182.4 ms
-  [+] Latency p50    : 1103.2 ms
-  [+] Latency p90    : 1891.5 ms
-  [+] Latency p99    : 2340.1 ms
-
-  HTTP status breakdown:
-    HTTP 200 : 498
-    HTTP 403 : 2
-```
-
----
-
-## HTTP Method Reference
-
-| Method | Body? | Typical use |
-|--------|-------|-------------|
-| `GET` | No | Standard page request — highest compatibility |
-| `POST` | Yes (JSON) | Form submit / API endpoint stress |
-| `HEAD` | No | Header-only probe — lowest bandwidth, fastest RPS |
-| `PUT` | Yes (JSON) | REST resource update |
-| `PATCH` | Yes (JSON) | Partial resource update |
-| `DELETE` | No | REST resource deletion test |
-| `OPTIONS` | No | CORS preflight / allowed-methods probe |
-
-For `POST`, `PUT`, and `PATCH` the script automatically attaches a JSON body:
-
-```json
-{"probe": "l7_flood", "idx": <request_number>, "ts": "<ISO timestamp>"}
-```
-
----
-
-## Example Commands
-
-```bash
-# Quick diagnostic run
-python3 l7_proxy_tester.py
-
-# Flood with GET — 1000 requests, 75 workers
-python3 l7_proxy_tester.py --flood -n 1000 -c 75
-
-# POST flood — simulate form/API spam, 500 reqs, 50 workers
-python3 l7_proxy_tester.py --flood -m POST -n 500 -c 50
-
-# HEAD flood — minimal bandwidth, max RPS measurement
-python3 l7_proxy_tester.py --flood -m HEAD -n 2000 -c 100
-
-# OPTIONS flood — CORS/firewall probe
-python3 l7_proxy_tester.py --flood -m OPTIONS -n 300 -c 30
-
-# Heavy DELETE flood
-python3 l7_proxy_tester.py --flood -m DELETE -n 5000 -c 200
+  Method       Sent      2xx     Fail      RPS
+  ──────────────────────────────────────────────
+  DELETE        142      142        0     14.2
+  GET           143      143        0     14.3
+  HEAD          144      143        1     14.4
+  OPTIONS       141      141        0     14.1
+  PATCH         142      138        4     14.2
+  POST          143      143        0     14.3
+  PUT           142      142        0     14.2
 ```
 
 ---
 
 ## Proxy Configuration
 
-The proxy is hardcoded at the top of `l7_proxy_tester.py`:
+Edit the constants at the top of `l7_proxy_tester.py` to change the proxy:
 
 ```python
 PROXY_HOST = "10.0.10.118"
 PROXY_PORT = 3128
 ```
 
-Change these values if your Squid instance is on a different address.
+All traffic (HTTP and HTTPS) is routed through this proxy. TLS certificate verification is disabled for lab use.
 
 ---
 
-## Notes
+## Features
 
-- **TLS verification is disabled** (`CERT_NONE`) — intentional for lab use. Change `ctx.verify_mode` to `ssl.CERT_REQUIRED` in production.
-- Each flood worker creates its own `urllib` opener — fully thread-safe, no shared state.
-- User-agents rotate across 5 realistic browser strings per request to avoid trivial fingerprinting.
-- The script uses **stdlib only** — no `requests`, `aiohttp`, or any third-party dependency.
-
----
-
-## Disclaimer
-
-> This tool is intended for **authorised lab testing only**.  
-> Only run it against systems you own or have explicit written permission to test.  
-> Misuse may be illegal under the Computer Misuse Act or equivalent legislation.
+- ✅ Zero dependencies — pure Python stdlib
+- ✅ Fully interactive menu, no CLI flags to remember
+- ✅ Rate-limited flood engine (token bucket per RPS target)
+- ✅ Rotating user-agent strings for realism
+- ✅ Live progress bar with real-time RPS counter
+- ✅ Latency percentiles (avg, p50, p90, p99)
+- ✅ HTTP status code breakdown per run
+- ✅ Multi-vector attack with aggregate summary
+- ✅ Compatible with Python 3.7+

