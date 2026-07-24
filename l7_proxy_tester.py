@@ -25,6 +25,7 @@ Flood parameters (prompted interactively):
 
 import sys
 import time
+import signal
 import socket
 import ssl
 import json
@@ -36,6 +37,9 @@ import http.client
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
 from typing import Optional, Tuple, List, Dict
+
+# Global graceful-stop event — set by Ctrl+C handler during a flood
+_STOP = threading.Event()
 
 # ── Proxy config ──────────────────────────────────────────────────────────────
 PROXY_HOST = "10.0.10.118"
@@ -440,6 +444,7 @@ def run_flood(target_url, workers, rps, duration, method, label=None):
     wall_start = time.time()
     deadline   = wall_start + duration
     bar_width  = 40
+    _STOP.clear()   # reset kill flag for this run
 
     def _print_progress():
         elapsed = time.time() - wall_start
@@ -472,10 +477,13 @@ def run_flood(target_url, workers, rps, duration, method, label=None):
             status_counts[status] = status_counts.get(status, 0) + 1
         _print_progress()
 
+    info("{}Press Ctrl+C at any time to stop and see final metrics{}".format(DIM, RESET))
+
     idx = 0
+    stopped_early = False
     with ThreadPoolExecutor(max_workers=workers) as pool:
         futures = []
-        while time.time() < deadline:
+        while time.time() < deadline and not _STOP.is_set():
             submit_time = time.time()
             futures.append(pool.submit(_worker, idx))
             idx += 1
@@ -485,6 +493,9 @@ def run_flood(target_url, workers, rps, duration, method, label=None):
             sleep_needed   = interval - elapsed_submit
             if sleep_needed > 0:
                 time.sleep(sleep_needed)
+
+        if _STOP.is_set():
+            stopped_early = True
 
         for f in futures:
             try:
@@ -751,13 +762,24 @@ def main():
     print("\n{}  Workers : {}  |  RPS target : {:.0f}  |  Duration : {:.0f}s{}".format(
         DIM, workers, rps, duration, RESET))
 
+    # ── Graceful Ctrl+C handler — stops flood and falls through to metrics ────
+    def _sigint_handler(sig, frame):
+        if not _STOP.is_set():
+            print("\n\n{}{}  ⚡ Ctrl+C received — stopping flood, collecting metrics...{}".format(
+                BOLD, YELLOW, RESET))
+            _STOP.set()
+        # Do NOT call sys.exit — let run_flood finish and print metrics naturally
+
+    signal.signal(signal.SIGINT, _sigint_handler)
+
     if mode == "multi":
         run_multi_vector(target_url, workers=workers, rps=rps, duration=duration)
     else:
         run_flood(target_url=target_url, workers=workers, rps=rps,
                   duration=duration, method=mode)
         print("\n{}{}{}".format(BOLD+GREEN, "="*60, RESET))
-        print("{}  Flood complete.{}".format(BOLD+GREEN, RESET))
+        stopped_msg = "Flood stopped early (Ctrl+C)." if _STOP.is_set() else "Flood complete."
+        print("{}  {}{}".format(BOLD+GREEN, stopped_msg, RESET))
         print("{}{}{}".format(BOLD+GREEN, "="*60, RESET))
         print()
 
