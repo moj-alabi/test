@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>L7 Proxy Test Suite</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h1>⚡ L7 Proxy</h1>
+            <p>Test Suite</p>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="#" class="nav-item active"><span class="nav-icon">📊</span><span class="nav-text">Dashboard</span></a>
+            <a href="#history-panel" class="nav-item"><span class="nav-icon">📜</span><span class="nav-text">Run History</span></a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="status-indicator">
+                <span id="proxy-dot" class="status-dot offline"></span>
+                <span id="proxy-text">Proxy: checking…</span>
+            </div>
+        </div>
+    </aside>
+
+    <div class="main-content">
+        <header class="top-bar">
+            <div class="breadcrumb"><span>L7 Proxy</span> / <span>Dashboard</span></div>
+            <div class="top-bar-actions">
+                <button class="btn btn-danger btn-sm" id="stop-btn" style="display:none" onclick="stopFlood()">🛑 Stop Flood</button>
+            </div>
+        </header>
+
+        <div class="content-area">
+            <div class="warning-banner">⚠️ For authorised performance testing only. All traffic routes through Squid proxy at <strong id="proxy-addr">10.0.10.118:3128</strong>.</div>
+
+            <div class="dashboard">
+
+                <!-- Config panel -->
+                <section class="panel">
+                    <div class="panel-header"><h2>⚙️ Attack Configuration</h2></div>
+                    <form class="attack-form" onsubmit="startFlood(event)">
+                        <div class="form-group">
+                            <label for="target">Target URL</label>
+                            <input type="text" id="target" placeholder="https://example.com" required>
+                            <small>Full URL including protocol</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="attack-type">Attack Vector</label>
+                            <select id="attack-type">
+                                <optgroup label="Single Method">
+                                    <option value="GET">💥 GET Flood</option>
+                                    <option value="POST">💥 POST Flood</option>
+                                    <option value="HEAD">💥 HEAD Flood</option>
+                                    <option value="PUT">💥 PUT Flood</option>
+                                    <option value="PATCH">💥 PATCH Flood</option>
+                                    <option value="DELETE">💥 DELETE Flood</option>
+                                    <option value="OPTIONS">💥 OPTIONS Flood</option>
+                                </optgroup>
+                                <optgroup label="Multi">
+                                    <option value="MULTI">⚡ Multi-Vector (all methods)</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="workers">Connections</label>
+                                <input type="number" id="workers" value="50" min="1" max="1000">
+                                <small>Parallel threads</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="rps">Target RPS</label>
+                                <input type="number" id="rps" value="100" min="1" max="50000">
+                                <small>Req/sec cap</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="duration">Duration (s)</label>
+                                <input type="number" id="duration" value="30" min="1" max="3600">
+                                <small>Seconds</small>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Quick Presets</label>
+                            <div class="preset-grid">
+                                <button type="button" class="preset-btn" onclick="applyPreset(25,50,30)">Light<br><small>25c·50r·30s</small></button>
+                                <button type="button" class="preset-btn" onclick="applyPreset(50,100,60)">Medium<br><small>50c·100r·60s</small></button>
+                                <button type="button" class="preset-btn" onclick="applyPreset(100,250,60)">Heavy<br><small>100c·250r·60s</small></button>
+                                <button type="button" class="preset-btn preset-danger" onclick="applyPreset(150,500,30)">Blitz<br><small>150c·500r·30s</small></button>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-lg" id="start-btn">🚀 Launch Flood</button>
+                    </form>
+                </section>
+
+                <!-- Metrics panel -->
+                <section class="panel metrics-panel">
+                    <div class="panel-header">
+                        <h2>📈 Real-time Metrics</h2>
+                        <div class="live-badge" id="live-badge" style="display:none"><span class="pulse-dot"></span> LIVE</div>
+                    </div>
+                    <div class="stat-summary-bar">
+                        <div class="summary-stat"><div class="summary-value" id="stat-rps">0</div><div class="summary-label">Req/s</div></div>
+                        <div class="summary-stat"><div class="summary-value" id="stat-total">0</div><div class="summary-label">Total</div></div>
+                        <div class="summary-stat"><div class="summary-value success-val" id="stat-success">0</div><div class="summary-label">Success</div></div>
+                        <div class="summary-stat"><div class="summary-value error-val" id="stat-errors">0</div><div class="summary-label">Errors</div></div>
+                        <div class="summary-stat"><div class="summary-value" id="stat-elapsed">0s</div><div class="summary-label">Elapsed</div></div>
+                        <div class="summary-stat"><div class="summary-value" id="stat-p50">–</div><div class="summary-label">p50 ms</div></div>
+                        <div class="summary-stat"><div class="summary-value" id="stat-p99">–</div><div class="summary-label">p99 ms</div></div>
+                    </div>
+                    <div class="progress-wrap" id="progress-wrap" style="display:none">
+                        <div class="progress-bar-bg"><div class="progress-bar-fill" id="progress-fill"></div></div>
+                        <span id="progress-label">0%</span>
+                    </div>
+                    <div class="timeseries-container"><canvas id="rpsChart"></canvas></div>
+                    <div class="chart-hint">Instantaneous RPS over time</div>
+                </section>
+
+                <!-- Status codes -->
+                <section class="panel">
+                    <div class="panel-header"><h2>📊 HTTP Status Breakdown</h2></div>
+                    <div style="max-width:380px;margin:1rem auto"><canvas id="statusChart" style="max-height:200px"></canvas></div>
+                    <div id="status-list" class="status-list"><p class="empty-state">No data yet</p></div>
+                </section>
+
+                <!-- Live log -->
+                <section class="panel">
+                    <div class="panel-header">
+                        <h2>📋 Live Log</h2>
+                        <button class="btn btn-sm" onclick="clearLog()">🗑 Clear</button>
+                    </div>
+                    <div id="log" class="log-area"><div class="log-line muted">Waiting for flood to start…</div></div>
+                </section>
+
+                <!-- Run history -->
+                <section class="panel" id="history-panel" style="grid-column:span 2">
+                    <div class="panel-header">
+                        <h2>📜 Run History</h2>
+                        <button class="btn btn-sm" onclick="clearHistory()">🗑 Clear</button>
+                    </div>
+                    <div style="overflow-x:auto">
+                        <table id="history-table">
+                            <thead><tr><th>Time</th><th>Method</th><th>Target</th><th>Sent</th><th>RPS</th><th>p50</th><th>p99</th><th>Success</th><th>Errors</th><th>Duration</th></tr></thead>
+                            <tbody id="history-body"><tr><td colspan="10" class="empty-state">No runs yet</td></tr></tbody>
+                        </table>
+                    </div>
+                </section>
+
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
