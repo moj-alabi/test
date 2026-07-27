@@ -10,143 +10,242 @@
 <body>
     <aside class="sidebar">
         <div class="sidebar-header">
-            <h1>⚡ L7 Proxy</h1>
-            <p>Test Suite</p>
+            <div class="logo">L7 Proxy</div>
+            <div class="logo-sub">Test Suite</div>
         </div>
         <nav class="sidebar-nav">
-            <a href="#" class="nav-item active"><span class="nav-icon">📊</span><span class="nav-text">Dashboard</span></a>
-            <a href="#history-panel" class="nav-item"><span class="nav-icon">📜</span><span class="nav-text">Run History</span></a>
+            <a href="#" class="nav-item active" onclick="showPage('dashboard',this)">
+                <span class="nav-icon"></span>Dashboard
+            </a>
+            <a href="#" class="nav-item" onclick="showPage('bots',this)">
+                <span class="nav-icon"></span>Devices
+            </a>
+            <a href="#" class="nav-item" onclick="showPage('settings',this)">
+                <span class="nav-icon"></span>Settings
+            </a>
         </nav>
         <div class="sidebar-footer">
-            <div class="status-indicator">
-                <span id="proxy-dot" class="status-dot offline"></span>
-                <span id="proxy-text">Proxy: checking…</span>
+            <div class="proxy-status">
+                <span id="proxy-dot" class="dot dot-offline"></span>
+                <span id="proxy-text">Proxy: checking</span>
             </div>
         </div>
     </aside>
 
     <div class="main-content">
         <header class="top-bar">
-            <div class="breadcrumb"><span>L7 Proxy</span> / <span>Dashboard</span></div>
+            <div class="breadcrumb" id="breadcrumb">Dashboard</div>
             <div class="top-bar-actions">
-                <button class="btn btn-danger btn-sm" id="stop-btn" style="display:none" onclick="stopFlood()">🛑 Stop Flood</button>
+                <button class="btn btn-stop" id="stop-btn" style="display:none" onclick="stopFlood()">
+                    Stop Flood
+                </button>
             </div>
         </header>
 
-        <div class="content-area">
-            <div class="warning-banner">⚠️ For authorised performance testing only. All traffic routes through Squid proxy at <strong id="proxy-addr">10.0.10.118:3128</strong>.</div>
+        <!-- DASHBOARD PAGE -->
+        <div id="page-dashboard" class="page active">
+            <div class="content-area">
+                <div class="alert-bar">
+                    For authorised performance testing only. Proxy: <strong id="proxy-addr">loading...</strong>
+                </div>
+                <div class="grid-2">
 
-            <div class="dashboard">
-
-                <!-- Config panel -->
-                <section class="panel">
-                    <div class="panel-header"><h2>⚙️ Attack Configuration</h2></div>
-                    <form class="attack-form" onsubmit="startFlood(event)">
-                        <div class="form-group">
-                            <label for="target">Target URL</label>
-                            <input type="text" id="target" placeholder="https://example.com" required>
-                            <small>Full URL including protocol</small>
-                        </div>
-                        <div class="form-group">
-                            <label for="attack-type">Attack Vector</label>
-                            <select id="attack-type">
-                                <optgroup label="Single Method">
-                                    <option value="GET">💥 GET Flood</option>
-                                    <option value="POST">💥 POST Flood</option>
-                                    <option value="HEAD">💥 HEAD Flood</option>
-                                    <option value="PUT">💥 PUT Flood</option>
-                                    <option value="PATCH">💥 PATCH Flood</option>
-                                    <option value="DELETE">💥 DELETE Flood</option>
-                                    <option value="OPTIONS">💥 OPTIONS Flood</option>
-                                </optgroup>
-                                <optgroup label="Multi">
-                                    <option value="MULTI">⚡ Multi-Vector (all methods)</option>
-                                </optgroup>
-                            </select>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="workers">Connections</label>
-                                <input type="number" id="workers" value="50" min="1" max="1000">
-                                <small>Parallel threads</small>
+                    <!-- Attack config -->
+                    <section class="card">
+                        <div class="card-header">Attack Configuration</div>
+                        <form class="form" onsubmit="startFlood(event)">
+                            <div class="field">
+                                <label>Target URL</label>
+                                <input type="text" id="target" placeholder="https://example.com" required>
                             </div>
-                            <div class="form-group">
-                                <label for="rps">Target RPS</label>
-                                <input type="number" id="rps" value="100" min="1" max="50000">
-                                <small>Req/sec cap</small>
+                            <div class="field">
+                                <label>Attack Vector</label>
+                                <select id="attack-type">
+                                    <option value="GET">GET Flood</option>
+                                    <option value="POST">POST Flood</option>
+                                    <option value="HEAD">HEAD Flood</option>
+                                    <option value="PUT">PUT Flood</option>
+                                    <option value="PATCH">PATCH Flood</option>
+                                    <option value="DELETE">DELETE Flood</option>
+                                    <option value="OPTIONS">OPTIONS Flood</option>
+                                    <option value="MULTI">Multi-Vector (all methods)</option>
+                                </select>
                             </div>
-                            <div class="form-group">
-                                <label for="duration">Duration (s)</label>
-                                <input type="number" id="duration" value="30" min="1" max="3600">
-                                <small>Seconds</small>
+                            <div class="field-row">
+                                <div class="field">
+                                    <label>Connections</label>
+                                    <input type="number" id="workers" value="50" min="1" max="1000">
+                                </div>
+                                <div class="field">
+                                    <label>Target RPS</label>
+                                    <input type="number" id="rps" value="100" min="1" max="50000">
+                                </div>
+                                <div class="field">
+                                    <label>Duration (s)</label>
+                                    <input type="number" id="duration" value="30" min="1" max="3600">
+                                </div>
                             </div>
+                            <div class="field">
+                                <label>Presets</label>
+                                <div class="preset-row">
+                                    <button type="button" class="preset" onclick="applyPreset(25,50,30)">Light</button>
+                                    <button type="button" class="preset" onclick="applyPreset(50,100,60)">Medium</button>
+                                    <button type="button" class="preset" onclick="applyPreset(100,250,60)">Heavy</button>
+                                    <button type="button" class="preset preset-red" onclick="applyPreset(150,500,30)">Blitz</button>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-full" id="start-btn">Launch Flood</button>
+                        </form>
+                    </section>
+
+                    <!-- Metrics -->
+                    <section class="card metrics-card">
+                        <div class="card-header">
+                            Real-time Metrics
+                            <span class="live-tag" id="live-tag" style="display:none">LIVE</span>
                         </div>
-                        <div class="form-group">
-                            <label>Quick Presets</label>
-                            <div class="preset-grid">
-                                <button type="button" class="preset-btn" onclick="applyPreset(25,50,30)">Light<br><small>25c·50r·30s</small></button>
-                                <button type="button" class="preset-btn" onclick="applyPreset(50,100,60)">Medium<br><small>50c·100r·60s</small></button>
-                                <button type="button" class="preset-btn" onclick="applyPreset(100,250,60)">Heavy<br><small>100c·250r·60s</small></button>
-                                <button type="button" class="preset-btn preset-danger" onclick="applyPreset(150,500,30)">Blitz<br><small>150c·500r·30s</small></button>
-                            </div>
+                        <div class="stat-grid">
+                            <div class="stat"><div class="stat-val" id="stat-rps">0</div><div class="stat-lbl">Req/s</div></div>
+                            <div class="stat"><div class="stat-val" id="stat-total">0</div><div class="stat-lbl">Total</div></div>
+                            <div class="stat"><div class="stat-val green" id="stat-success">0</div><div class="stat-lbl">Success</div></div>
+                            <div class="stat"><div class="stat-val red" id="stat-errors">0</div><div class="stat-lbl">Errors</div></div>
+                            <div class="stat"><div class="stat-val" id="stat-elapsed">0s</div><div class="stat-lbl">Elapsed</div></div>
+                            <div class="stat"><div class="stat-val" id="stat-p50">-</div><div class="stat-lbl">p50 ms</div></div>
+                            <div class="stat"><div class="stat-val" id="stat-p99">-</div><div class="stat-lbl">p99 ms</div></div>
                         </div>
-                        <button type="submit" class="btn btn-primary btn-lg" id="start-btn">🚀 Launch Flood</button>
-                    </form>
-                </section>
+                        <div class="progress-row" id="progress-row" style="display:none">
+                            <div class="progress-bg"><div class="progress-fill" id="progress-fill"></div></div>
+                            <span id="progress-pct">0%</span>
+                        </div>
+                        <div class="chart-wrap"><canvas id="rpsChart"></canvas></div>
+                        <div class="chart-label">RPS over time</div>
+                    </section>
 
-                <!-- Metrics panel -->
-                <section class="panel metrics-panel">
-                    <div class="panel-header">
-                        <h2>📈 Real-time Metrics</h2>
-                        <div class="live-badge" id="live-badge" style="display:none"><span class="pulse-dot"></span> LIVE</div>
-                    </div>
-                    <div class="stat-summary-bar">
-                        <div class="summary-stat"><div class="summary-value" id="stat-rps">0</div><div class="summary-label">Req/s</div></div>
-                        <div class="summary-stat"><div class="summary-value" id="stat-total">0</div><div class="summary-label">Total</div></div>
-                        <div class="summary-stat"><div class="summary-value success-val" id="stat-success">0</div><div class="summary-label">Success</div></div>
-                        <div class="summary-stat"><div class="summary-value error-val" id="stat-errors">0</div><div class="summary-label">Errors</div></div>
-                        <div class="summary-stat"><div class="summary-value" id="stat-elapsed">0s</div><div class="summary-label">Elapsed</div></div>
-                        <div class="summary-stat"><div class="summary-value" id="stat-p50">–</div><div class="summary-label">p50 ms</div></div>
-                        <div class="summary-stat"><div class="summary-value" id="stat-p99">–</div><div class="summary-label">p99 ms</div></div>
-                    </div>
-                    <div class="progress-wrap" id="progress-wrap" style="display:none">
-                        <div class="progress-bar-bg"><div class="progress-bar-fill" id="progress-fill"></div></div>
-                        <span id="progress-label">0%</span>
-                    </div>
-                    <div class="timeseries-container"><canvas id="rpsChart"></canvas></div>
-                    <div class="chart-hint">Instantaneous RPS over time</div>
-                </section>
+                    <!-- Status breakdown -->
+                    <section class="card">
+                        <div class="card-header">HTTP Status Breakdown</div>
+                        <div class="donut-wrap"><canvas id="statusChart"></canvas></div>
+                        <div id="status-chips" class="chip-row"><span class="muted-text">No data yet</span></div>
+                    </section>
 
-                <!-- Status codes -->
-                <section class="panel">
-                    <div class="panel-header"><h2>📊 HTTP Status Breakdown</h2></div>
-                    <div style="max-width:380px;margin:1rem auto"><canvas id="statusChart" style="max-height:200px"></canvas></div>
-                    <div id="status-list" class="status-list"><p class="empty-state">No data yet</p></div>
-                </section>
+                    <!-- Live log -->
+                    <section class="card">
+                        <div class="card-header">
+                            Live Log
+                            <button class="btn-link" onclick="clearLog()">Clear</button>
+                        </div>
+                        <div id="log" class="log-pane"><span class="log-muted">Waiting for flood to start...</span></div>
+                    </section>
 
-                <!-- Live log -->
-                <section class="panel">
-                    <div class="panel-header">
-                        <h2>📋 Live Log</h2>
-                        <button class="btn btn-sm" onclick="clearLog()">🗑 Clear</button>
-                    </div>
-                    <div id="log" class="log-area"><div class="log-line muted">Waiting for flood to start…</div></div>
-                </section>
+                    <!-- History -->
+                    <section class="card full-width">
+                        <div class="card-header">
+                            Run History
+                            <button class="btn-link" onclick="clearHistory()">Clear</button>
+                        </div>
+                        <div class="table-wrap">
+                            <table id="hist-table">
+                                <thead><tr><th>Time</th><th>Method</th><th>Target</th><th>Sent</th><th>RPS</th><th>p50</th><th>p99</th><th>Success</th><th>Errors</th><th>Duration</th></tr></thead>
+                                <tbody id="hist-body"><tr><td colspan="10" class="muted-cell">No runs yet</td></tr></tbody>
+                            </table>
+                        </div>
+                    </section>
 
-                <!-- Run history -->
-                <section class="panel" id="history-panel" style="grid-column:span 2">
-                    <div class="panel-header">
-                        <h2>📜 Run History</h2>
-                        <button class="btn btn-sm" onclick="clearHistory()">🗑 Clear</button>
-                    </div>
-                    <div style="overflow-x:auto">
-                        <table id="history-table">
-                            <thead><tr><th>Time</th><th>Method</th><th>Target</th><th>Sent</th><th>RPS</th><th>p50</th><th>p99</th><th>Success</th><th>Errors</th><th>Duration</th></tr></thead>
-                            <tbody id="history-body"><tr><td colspan="10" class="empty-state">No runs yet</td></tr></tbody>
-                        </table>
-                    </div>
-                </section>
+                </div>
+            </div>
+        </div>
 
+        <!-- DEVICES / BOTS PAGE -->
+        <div id="page-bots" class="page">
+            <div class="content-area">
+                <div class="grid-1">
+                    <section class="card">
+                        <div class="card-header">Register New Device</div>
+                        <form class="form" onsubmit="registerBot(event)">
+                            <div class="field-row">
+                                <div class="field">
+                                    <label>Device ID</label>
+                                    <input type="text" id="bot-id" placeholder="worker-01" required>
+                                </div>
+                                <div class="field">
+                                    <label>IP Address</label>
+                                    <input type="text" id="bot-ip" placeholder="192.168.1.100" required>
+                                </div>
+                                <div class="field">
+                                    <label>Label (optional)</label>
+                                    <input type="text" id="bot-label" placeholder="Office PC">
+                                </div>
+                            </div>
+                            <div class="field" style="background:#1e293b;border-radius:6px;padding:12px;margin-top:4px">
+                                <label style="color:#94a3b8;margin-bottom:8px;display:block">Onboarding script — run on the remote device:</label>
+                                <code id="onboard-script" class="code-block">curl -s -X POST http://YOUR_SERVER_IP:5000/api/bots/register \<br>  -H "Content-Type: application/json" \<br>  -d '{"id":"worker-01","ip":"DEVICE_IP","label":"My Device"}'</code>
+                                <button type="button" class="btn-link" style="margin-top:8px" onclick="copyScript()">Copy script</button>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Register Device</button>
+                        </form>
+                    </section>
+
+                    <section class="card">
+                        <div class="card-header">
+                            Connected Devices
+                            <span class="badge" id="bot-count">0</span>
+                        </div>
+                        <div class="table-wrap">
+                            <table id="bots-table">
+                                <thead><tr><th>ID</th><th>IP</th><th>Label</th><th>Registered</th><th>Last Seen</th><th>Action</th></tr></thead>
+                                <tbody id="bots-body"><tr><td colspan="6" class="muted-cell">No devices registered</td></tr></tbody>
+                            </table>
+                        </div>
+                    </section>
+
+                    <section class="card">
+                        <div class="card-header">Keep-Alive Script</div>
+                        <p class="card-desc">Run this on each device to periodically ping the server and keep it marked as active.</p>
+                        <pre class="code-block" id="keepalive-script">#!/bin/bash
+# Run on remote device to keep it marked as online
+SERVER="http://YOUR_SERVER_IP:5000"
+ID="worker-01"
+
+while true; do
+  curl -s -X POST "$SERVER/api/bots/ping" \
+    -H "Content-Type: application/json" \
+    -d "{\"id\":\"$ID\"}" > /dev/null
+  sleep 30
+done</pre>
+                        <button type="button" class="btn-link" onclick="copyKeepalive()">Copy script</button>
+                    </section>
+                </div>
+            </div>
+        </div>
+
+        <!-- SETTINGS PAGE -->
+        <div id="page-settings" class="page">
+            <div class="content-area">
+                <div class="grid-1">
+                    <section class="card">
+                        <div class="card-header">Proxy Configuration</div>
+                        <form class="form" onsubmit="saveConfig(event)">
+                            <div class="field-row">
+                                <div class="field">
+                                    <label>Proxy Host</label>
+                                    <input type="text" id="cfg-host" placeholder="10.0.10.118">
+                                </div>
+                                <div class="field">
+                                    <label>Proxy Port</label>
+                                    <input type="number" id="cfg-port" placeholder="3128" min="1" max="65535">
+                                </div>
+                            </div>
+                            <div id="cfg-status" class="cfg-status"></div>
+                            <button type="submit" class="btn btn-primary">Apply Config</button>
+                        </form>
+                    </section>
+
+                    <section class="card">
+                        <div class="card-header">Connection Test</div>
+                        <button class="btn btn-secondary" onclick="testProxy()">Test Proxy Now</button>
+                        <div id="test-result" class="cfg-status" style="margin-top:12px"></div>
+                    </section>
+                </div>
             </div>
         </div>
     </div>

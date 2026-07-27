@@ -2,15 +2,18 @@
 """
 L7 Proxy Test Suite — All-in-one server
 =========================================
-Run:  python3 server.py
-Then: open http://localhost:5000 in your browser.
+python3 server.py          → http://localhost:5000
 
-Serves the static UI from ./public/ AND exposes:
-  GET  /api/proxy-status   – TCP reachability check
-  GET  /api/diag           – quick diagnostic (egress IP, GET, DNS, TLS)
-  POST /api/start          – start a flood  { target, method, workers, rps, duration }
-  POST /api/stop           – graceful stop
-  GET  /api/stream         – Server-Sent Events (live metrics)
+API
+  GET  /api/proxy-status   check Squid TCP reachability
+  GET  /api/config         get current proxy config
+  POST /api/config         update proxy config { host, port }
+  POST /api/start          start flood { target, method, workers, rps, duration }
+  POST /api/stop           graceful stop
+  GET  /api/stream         Server-Sent Events (live metrics)
+  GET  /api/bots           list registered bots
+  POST /api/bots/register  register a bot { id, ip, label }
+  POST /api/bots/remove    remove a bot { id }
 
 Pure stdlib — no pip installs required.
 """
@@ -25,7 +28,6 @@ import mimetypes
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse
 
-# ── Engine import ──────────────────────────────────────────────────────────────
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import engine as eng
@@ -33,22 +35,41 @@ import engine as eng
 PORT   = int(os.environ.get("PORT", "5000"))
 PUBLIC = os.path.join(HERE, "public")
 
-# ── Shared SSE state ───────────────────────────────────────────────────────────
-_lock         = threading.Lock()
-_sse_clients  = []                          # type: list
-_flood_thread = None                        # type: threading.Thread | None
+# ── Mutable proxy config (can be updated at runtime via /api/config) ──────────
+_config_lock = threading.Lock()
+_config = {
+    "proxy_host": eng.PROXY_HOST,
+    "proxy_port": eng.PROXY_PORT,
+}
 
-# live counter mirror (updated by on_result callback)
+def _apply_config(host, port):
+    """Update engine proxy settings at runtime."""
+    with _config_lock:
+        _config["proxy_host"] = host
+        _config["proxy_port"] = port
+    eng.PROXY_HOST = host
+    eng.PROXY_PORT = port
+    eng.PROXY_URL  = "http://{}:{}".format(host, port)
+    # Rebuild shared opener
+    eng.OPENER = eng.build_opener()
+
+# ── Bot registry ──────────────────────────────────────────────────────────────
+_bots_lock = threading.Lock()
+_bots = {}   # id -> { id, ip, label, registered_at, last_seen }
+
+# ── Shared SSE / flood state ──────────────────────────────────────────────────
+_lock         = threading.Lock()
+_sse_clients  = []
+_flood_thread = None
+
 _live = {
     "total": 0, "success": 0, "errors": 0,
     "latencies": [], "status_counts": {},
     "wall_start": None, "target": "", "method": "",
 }
 
-
-# ── Broadcast helpers ──────────────────────────────────────────────────────────
+# ── Broadcast ─────────────────────────────────────────────────────────────────
 def _broadcast(obj):
-    # type: (dict) -> None
     msg = "data: {}\n\n".format(json.dumps(obj))
     with _lock:
         dead = []
@@ -58,22 +79,22 @@ def _broadcast(obj):
             except Exception:
                 dead.append(q)
         for q in dead:
-            _sse_clients.remove(q)
+            if q in _sse_clients:
+                _sse_clients.remove(q)
 
-
-# ── Ticker: pushes live stats every 500ms ─────────────────────────────────────
+# ── Ticker ────────────────────────────────────────────────────────────────────
 _ticker_stop = threading.Event()
 
 def _ticker():
     while not _ticker_stop.is_set():
         time.sleep(0.5)
         with _lock:
-            s    = _live.copy()
+            s    = dict(_live)
             lats = sorted(s["latencies"])
         if s["wall_start"] is None:
             continue
-        p50 = lats[int(len(lats) * 0.50)] if lats else 0
-        p99 = lats[int(len(lats) * 0.99)] if lats else 0
+        p50 = lats[int(len(lats)*0.50)] if lats else 0
+        p99 = lats[int(len(lats)*0.99)] if lats else 0
         _broadcast({
             "type":          "tick",
             "total":         s["total"],
@@ -84,24 +105,21 @@ def _ticker():
             "status_counts": s["status_counts"],
         })
 
-
-# ── on_result callback: called by engine for every completed request ───────────
+# ── on_result callback ────────────────────────────────────────────────────────
 def _on_result(ok_flag, ms, status):
     with _lock:
         _live["total"] += 1
         if ok_flag:
             _live["success"] += 1
         else:
-            _live["errors"] += 1
+            _live["errors"]  += 1
         if ms > 0:
             _live["latencies"].append(ms)
         sc = str(status) if status else "0"
         _live["status_counts"][sc] = _live["status_counts"].get(sc, 0) + 1
 
-
-# ── Flood orchestrator ─────────────────────────────────────────────────────────
+# ── Flood runner ──────────────────────────────────────────────────────────────
 def _run_flood(target, method, workers, rps, duration):
-    # Reset live counters
     with _lock:
         _live.update({
             "total": 0, "success": 0, "errors": 0,
@@ -115,11 +133,10 @@ def _run_flood(target, method, workers, rps, duration):
     tick_t = threading.Thread(target=_ticker, daemon=True)
     tick_t.start()
 
-    _broadcast({"type": "log", "level": "section",
-                "msg": "▶ {} flood → {}".format(method, target)})
     _broadcast({"type": "log", "level": "info",
-                "msg": "  Workers: {}  RPS: {}  Duration: {}s".format(
-                    workers, rps, duration)})
+                "msg": "Starting {} flood -> {}".format(method, target)})
+    _broadcast({"type": "log", "level": "info",
+                "msg": "Workers: {}  RPS: {}  Duration: {}s".format(workers, rps, duration)})
 
     try:
         if method == "MULTI":
@@ -133,11 +150,10 @@ def _run_flood(target, method, workers, rps, duration):
                 duration=duration, method=method, on_result=_on_result,
             )
     except Exception as exc:
-        _broadcast({"type": "log", "level": "err",
-                    "msg": "✗ Flood error: {}".format(exc)})
-        result = {"total": 0, "success": 0, "errors": 0,
-                  "wall": 0, "rps_actual": 0, "p50": 0, "p99": 0,
-                  "status_counts": {}}
+        _broadcast({"type": "log", "level": "error",
+                    "msg": "Flood error: {}".format(exc)})
+        result = {"total":0,"success":0,"errors":0,"wall":0,
+                  "rps_actual":0,"p50":0,"p99":0,"status_counts":{}}
     finally:
         _ticker_stop.set()
 
@@ -146,10 +162,10 @@ def _run_flood(target, method, workers, rps, duration):
         sc   = dict(_live["status_counts"])
         _live["wall_start"] = None
 
-    p50 = lats[int(len(lats) * 0.50)] if lats else 0
-    p99 = lats[int(len(lats) * 0.99)] if lats else 0
-
+    p50 = lats[int(len(lats)*0.50)] if lats else 0
+    p99 = lats[int(len(lats)*0.99)] if lats else 0
     stopped = eng._STOP.is_set()
+
     _broadcast({
         "type":          "done",
         "method":        result.get("method", method),
@@ -164,21 +180,20 @@ def _run_flood(target, method, workers, rps, duration):
         "status_counts": sc,
         "stopped_early": stopped,
     })
-    _broadcast({"type": "log", "level": "ok",
-                "msg": "✔ {} — {:,} sent  {:.1f} RPS  p99 {:.0f}ms".format(
+    _broadcast({"type": "log", "level": "success",
+                "msg": "{} — {:,} sent  {:.1f} RPS  p99 {:.0f}ms".format(
                     "Stopped" if stopped else "Complete",
                     result.get("total", 0),
                     result.get("rps_actual", 0),
                     p99)})
 
-
-# ── HTTP handler ───────────────────────────────────────────────────────────────
+# ── HTTP Handler ──────────────────────────────────────────────────────────────
 class Handler(BaseHTTPRequestHandler):
     def log_message(self, format, *args):  # noqa: A002
-        pass  # suppress access log
+        pass
 
     def _cors(self):
-        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Origin",  "*")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
 
@@ -187,31 +202,29 @@ class Handler(BaseHTTPRequestHandler):
         self._cors()
         self.end_headers()
 
-    # ── GET ────────────────────────────────────────────────────────────────────
     def do_GET(self):
         parsed = urlparse(self.path)
         path   = parsed.path.rstrip("/") or "/"
 
-        # ── API routes ────────────────────────────────────────────────────────
         if path == "/api/proxy-status":
             ok, ms = eng.check_proxy_reachability()
+            with _config_lock:
+                cfg = dict(_config)
             self._json({"ok": ok, "ms": ms,
-                        "host": eng.PROXY_HOST, "port": eng.PROXY_PORT})
+                        "host": cfg["proxy_host"], "port": cfg["proxy_port"]})
             return
 
-        if path == "/api/diag":
-            result = {}
-            ok, ms = eng.check_proxy_reachability()
-            result["proxy"] = {"ok": ok, "ms": ms}
-            result["egress_ip"] = eng.test_egress_ip()
-            return  # (streaming diag omitted for brevity — use flood for live data)
+        if path == "/api/config":
+            with _config_lock:
+                self._json(dict(_config))
+            return
 
         if path == "/api/stream":
             self.send_response(200)
             self._cors()
-            self.send_header("Content-Type", "text/event-stream")
-            self.send_header("Cache-Control", "no-cache")
-            self.send_header("X-Accel-Buffering", "no")
+            self.send_header("Content-Type",    "text/event-stream")
+            self.send_header("Cache-Control",   "no-cache")
+            self.send_header("X-Accel-Buffering","no")
             self.end_headers()
             q = queue.Queue()
             with _lock:
@@ -233,32 +246,33 @@ class Handler(BaseHTTPRequestHandler):
                         _sse_clients.remove(q)
             return
 
-        # ── Static file serving ───────────────────────────────────────────────
-        # / → index.html
+        if path == "/api/bots":
+            with _bots_lock:
+                self._json({"bots": list(_bots.values())})
+            return
+
+        # Static files
         if path == "/":
             path = "/index.html"
         file_path = os.path.join(PUBLIC, path.lstrip("/"))
         if os.path.isfile(file_path):
             mime, _ = mimetypes.guess_type(file_path)
-            mime = mime or "application/octet-stream"
             with open(file_path, "rb") as f:
                 data = f.read()
             self.send_response(200)
-            self.send_header("Content-Type", mime)
+            self.send_header("Content-Type",   mime or "application/octet-stream")
             self.send_header("Content-Length", str(len(data)))
+            self._cors()
             self.end_headers()
-            self.wfile.write(data)
+            self._safe_write(data)
         else:
             self.send_response(404)
             self.end_headers()
-            self.wfile.write(b"404 Not Found")
+            self._safe_write(b"404 Not Found")
 
-    # ── POST ───────────────────────────────────────────────────────────────────
     def do_POST(self):
         global _flood_thread
-        parsed = urlparse(self.path)
-        path   = parsed.path
-
+        path   = urlparse(self.path).path
         length = int(self.headers.get("Content-Length", 0))
         body   = self.rfile.read(length) if length else b"{}"
         try:
@@ -266,10 +280,19 @@ class Handler(BaseHTTPRequestHandler):
         except Exception:
             data = {}
 
-        if path == "/api/start":
+        if path == "/api/config":
+            host = str(data.get("host", "")).strip()
+            port = int(data.get("port", 3128))
+            if not host:
+                self._json({"ok": False, "error": "host required"})
+                return
+            _apply_config(host, port)
+            self._json({"ok": True, "host": host, "port": port})
+
+        elif path == "/api/start":
             target   = (data.get("target") or "").strip()
             method   = (data.get("method") or "GET").upper()
-            workers  = max(1, int(data.get("workers", 50)))
+            workers  = max(1,   int(data.get("workers", 50)))
             rps      = max(0.1, float(data.get("rps", 100)))
             duration = max(1.0, float(data.get("duration", 30)))
 
@@ -296,23 +319,69 @@ class Handler(BaseHTTPRequestHandler):
 
         elif path == "/api/stop":
             eng._STOP.set()
+            _ticker_stop.set()
+            _broadcast({"type": "log", "level": "warning",
+                        "msg": "Emergency stop received — draining in-flight requests..."})
+            self._json({"ok": True})
+
+        elif path == "/api/bots/register":
+            bot_id    = str(data.get("id", "")).strip()
+            bot_ip    = str(data.get("ip", "")).strip()
+            bot_label = str(data.get("label", bot_id)).strip()
+            if not bot_id or not bot_ip:
+                self._json({"ok": False, "error": "id and ip required"})
+                return
+            now = time.time()
+            with _bots_lock:
+                _bots[bot_id] = {
+                    "id":            bot_id,
+                    "ip":            bot_ip,
+                    "label":         bot_label,
+                    "registered_at": now,
+                    "last_seen":     now,
+                }
+            _broadcast({"type": "bot_update", "bots": list(_bots.values())})
+            self._json({"ok": True})
+
+        elif path == "/api/bots/remove":
+            bot_id = str(data.get("id", "")).strip()
+            with _bots_lock:
+                removed = _bots.pop(bot_id, None)
+            _broadcast({"type": "bot_update", "bots": list(_bots.values())})
+            self._json({"ok": True, "removed": removed is not None})
+
+        elif path == "/api/bots/ping":
+            # Bots call this periodically to update last_seen
+            bot_id = str(data.get("id", "")).strip()
+            with _bots_lock:
+                if bot_id in _bots:
+                    _bots[bot_id]["last_seen"] = time.time()
             self._json({"ok": True})
 
         else:
             self.send_response(404)
             self.end_headers()
 
+    def _safe_write(self, data):
+        try:
+            self.wfile.write(data)
+        except (BrokenPipeError, ConnectionResetError):
+            pass
+
     def _json(self, obj, status=200):
         body = json.dumps(obj).encode()
-        self.send_response(status)
-        self._cors()
-        self.send_header("Content-Type", "application/json")
-        self.send_header("Content-Length", str(len(body)))
-        self.end_headers()
-        self.wfile.write(body)
+        try:
+            self.send_response(status)
+            self._cors()
+            self.send_header("Content-Type",   "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self._safe_write(body)
+        except (BrokenPipeError, ConnectionResetError):
+            pass
 
 
-# ── Entry point ────────────────────────────────────────────────────────────────
+# ── Entry ─────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     server = HTTPServer(("0.0.0.0", PORT), Handler)
     print("=" * 56)
@@ -320,11 +389,11 @@ if __name__ == "__main__":
     print("  http://localhost:{}".format(PORT))
     print("  Proxy: {}:{}".format(eng.PROXY_HOST, eng.PROXY_PORT))
     print("=" * 56)
-    print("  Override proxy: L7_PROXY_HOST=x L7_PROXY_PORT=y python3 server.py")
-    print("  Press Ctrl+C to stop.\n")
+    print("  Override: L7_PROXY_HOST=x L7_PROXY_PORT=y python3 server.py")
+    print("  Ctrl+C to stop\n")
     try:
         server.serve_forever()
     except KeyboardInterrupt:
-        print("\nShutting down…")
+        print("\nShutting down.")
         eng._STOP.set()
         server.shutdown()

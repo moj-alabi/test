@@ -1,40 +1,207 @@
-/* L7 Proxy Test Suite — Dashboard JS */
+/* L7 Proxy Test Suite — app.js */
 
-const API = '';   // same origin — server.py serves this file
 let es = null, rpsChart = null, statusChart = null;
 let running = false, floodStart = null, floodDur = 30;
 let lastTotal = 0, lastTick = null;
 let runHistory = JSON.parse(localStorage.getItem('l7h') || '[]');
+let bots = [];
 
 /* ── Init ─────────────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', () => {
     initCharts();
     renderHistory();
+    loadConfig();
     checkProxy();
-    setInterval(checkProxy, 8000);
+    setInterval(checkProxy, 10000);
+    fetchBots();
+    setInterval(fetchBots, 15000);
 });
+
+/* ── Page navigation ──────────────────────────────────────────── */
+function showPage(name, el) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('page-' + name).classList.add('active');
+    if (el) el.classList.add('active');
+    document.getElementById('breadcrumb').textContent =
+        name === 'dashboard' ? 'Dashboard' :
+        name === 'bots'      ? 'Devices'   : 'Settings';
+    if (name === 'settings') loadConfig();
+    if (name === 'bots')     fetchBots();
+    return false;
+}
 
 /* ── Proxy status ─────────────────────────────────────────────── */
 async function checkProxy() {
     const dot = document.getElementById('proxy-dot');
     const txt = document.getElementById('proxy-text');
-    dot.className = 'status-dot checking';
-    txt.textContent = 'Proxy: checking…';
+    dot.className = 'dot dot-checking';
     try {
-        const r = await fetch('/api/proxy-status', { signal: AbortSignal.timeout(4000) });
+        const r = await fetch('/api/proxy-status', { signal: AbortSignal.timeout(5000) });
         const d = await r.json();
         if (d.ok) {
-            dot.className = 'status-dot online';
-            txt.textContent = `Proxy: online (${d.ms}ms)`;
-            document.getElementById('proxy-addr').textContent = `${d.host}:${d.port}`;
+            dot.className = 'dot dot-online';
+            txt.textContent = 'Proxy: online ' + d.ms + 'ms';
+            const pa = document.getElementById('proxy-addr');
+            if (pa) pa.textContent = d.host + ':' + d.port;
         } else {
-            dot.className = 'status-dot offline';
+            dot.className = 'dot dot-offline';
             txt.textContent = 'Proxy: unreachable';
         }
     } catch {
-        dot.className = 'status-dot offline';
+        dot.className = 'dot dot-offline';
         txt.textContent = 'Proxy: offline';
     }
+}
+
+/* ── Config ───────────────────────────────────────────────────── */
+async function loadConfig() {
+    try {
+        const r = await fetch('/api/config');
+        const d = await r.json();
+        const h = document.getElementById('cfg-host');
+        const p = document.getElementById('cfg-port');
+        if (h) h.value = d.proxy_host || '';
+        if (p) p.value = d.proxy_port || '';
+        const pa = document.getElementById('proxy-addr');
+        if (pa) pa.textContent = (d.proxy_host || '') + ':' + (d.proxy_port || '');
+    } catch {}
+}
+
+async function saveConfig(e) {
+    e.preventDefault();
+    const host = document.getElementById('cfg-host').value.trim();
+    const port = parseInt(document.getElementById('cfg-port').value) || 3128;
+    const st   = document.getElementById('cfg-status');
+    st.className = 'cfg-status';
+    st.textContent = 'Saving...';
+    try {
+        const r = await fetch('/api/config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ host, port })
+        });
+        const d = await r.json();
+        if (d.ok) {
+            st.className = 'cfg-status ok';
+            st.textContent = 'Config applied: ' + host + ':' + port;
+            const pa = document.getElementById('proxy-addr');
+            if (pa) pa.textContent = host + ':' + port;
+            checkProxy();
+        } else {
+            st.className = 'cfg-status err';
+            st.textContent = 'Error: ' + (d.error || 'unknown');
+        }
+    } catch (err) {
+        st.className = 'cfg-status err';
+        st.textContent = 'Request failed: ' + err.message;
+    }
+}
+
+async function testProxy() {
+    const el = document.getElementById('test-result');
+    el.className = 'cfg-status';
+    el.textContent = 'Testing...';
+    try {
+        const r = await fetch('/api/proxy-status', { signal: AbortSignal.timeout(6000) });
+        const d = await r.json();
+        if (d.ok) {
+            el.className = 'cfg-status ok';
+            el.textContent = 'Proxy reachable — ' + d.ms + 'ms — ' + d.host + ':' + d.port;
+        } else {
+            el.className = 'cfg-status err';
+            el.textContent = 'Proxy unreachable: ' + (d.error || 'connection refused');
+        }
+    } catch (err) {
+        el.className = 'cfg-status err';
+        el.textContent = 'Test failed: ' + err.message;
+    }
+}
+
+/* ── Bots ─────────────────────────────────────────────────────── */
+async function fetchBots() {
+    try {
+        const r = await fetch('/api/bots');
+        const d = await r.json();
+        bots = d.bots || [];
+        renderBots();
+    } catch {}
+}
+
+function renderBots() {
+    const tb = document.getElementById('bots-body');
+    const bc = document.getElementById('bot-count');
+    if (bc) bc.textContent = bots.length;
+    if (!bots.length) {
+        tb.innerHTML = '<tr><td colspan="6" class="muted-cell">No devices registered</td></tr>';
+        return;
+    }
+    const now = Date.now() / 1000;
+    tb.innerHTML = bots.map(b => {
+        const ago = Math.round(now - (b.last_seen || 0));
+        const online = ago < 60;
+        const statusDot = online
+            ? '<span class="dot dot-online" style="display:inline-block;margin-right:5px"></span>'
+            : '<span class="dot dot-offline" style="display:inline-block;margin-right:5px"></span>';
+        return `<tr>
+            <td>${statusDot}${b.id}</td>
+            <td>${b.ip}</td>
+            <td>${b.label || '-'}</td>
+            <td>${fmtTime(b.registered_at)}</td>
+            <td>${ago < 3600 ? ago + 's ago' : 'inactive'}</td>
+            <td><button class="btn-link" style="color:#ef4444" onclick="removeBot('${b.id}')">Remove</button></td>
+        </tr>`;
+    }).join('');
+}
+
+async function registerBot(e) {
+    e.preventDefault();
+    const id    = document.getElementById('bot-id').value.trim();
+    const ip    = document.getElementById('bot-ip').value.trim();
+    const label = document.getElementById('bot-label').value.trim();
+    try {
+        const r = await fetch('/api/bots/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, ip, label })
+        });
+        const d = await r.json();
+        if (d.ok) {
+            document.getElementById('bot-id').value    = '';
+            document.getElementById('bot-ip').value    = '';
+            document.getElementById('bot-label').value = '';
+            fetchBots();
+        } else {
+            alert('Error: ' + (d.error || 'unknown'));
+        }
+    } catch (err) {
+        alert('Request failed: ' + err.message);
+    }
+}
+
+async function removeBot(id) {
+    await fetch('/api/bots/remove', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+    });
+    fetchBots();
+}
+
+function copyScript() {
+    const id    = document.getElementById('bot-id').value.trim()   || 'worker-01';
+    const ip    = document.getElementById('bot-ip').value.trim()   || 'DEVICE_IP';
+    const label = document.getElementById('bot-label').value.trim() || 'My Device';
+    const host  = location.hostname + ':' + location.port;
+    const text  = `curl -s -X POST http://${host}/api/bots/register \\\n  -H "Content-Type: application/json" \\\n  -d '{"id":"${id}","ip":"${ip}","label":"${label}"}'`;
+    navigator.clipboard.writeText(text).then(() => alert('Script copied to clipboard'));
+}
+
+function copyKeepalive() {
+    const id   = document.getElementById('bot-id').value.trim() || 'worker-01';
+    const host = location.hostname + ':' + location.port;
+    const text = `#!/bin/bash\nSERVER="http://${host}"\nID="${id}"\n\nwhile true; do\n  curl -s -X POST "$SERVER/api/bots/ping" \\\n    -H "Content-Type: application/json" \\\n    -d "{\\"id\\":\\"$ID\\"}" > /dev/null\n  sleep 30\ndone`;
+    navigator.clipboard.writeText(text).then(() => alert('Keep-alive script copied to clipboard'));
 }
 
 /* ── Charts ───────────────────────────────────────────────────── */
@@ -42,59 +209,57 @@ function initCharts() {
     rpsChart = new Chart(document.getElementById('rpsChart').getContext('2d'), {
         type: 'line',
         data: { labels: [], datasets: [{ label: 'RPS', data: [],
-            borderColor: '#ff6b35', backgroundColor: 'rgba(255,107,53,.1)',
+            borderColor: '#6366f1', backgroundColor: 'rgba(99,102,241,.08)',
             borderWidth: 2, pointRadius: 0, fill: true, tension: 0.4 }] },
         options: { responsive: true, animation: false,
             scales: { x: { display: false },
-                      y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,.05)' } } },
+                      y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,.04)' } } },
             plugins: { legend: { display: false } } }
     });
-
     statusChart = new Chart(document.getElementById('statusChart').getContext('2d'), {
         type: 'doughnut',
         data: { labels: [], datasets: [{ data: [], backgroundColor: [] }] },
-        options: { responsive: true,
-            plugins: { legend: { position: 'right', labels: { font: { size: 11 } } } } }
+        options: { responsive: true, plugins: { legend: { position: 'right', labels: { font: { size: 11 } } } } }
     });
 }
 
-const SC = { '2xx':'#4ade80','3xx':'#facc15','4xx':'#f87171','5xx':'#e879f9','0xx':'#94a3b8' };
+const SC_COLORS = { '2xx':'#4ade80','3xx':'#fbbf24','4xx':'#f87171','5xx':'#c084fc','0xx':'#94a3b8' };
 
-function updateStatus(counts) {
-    const g = {'2xx':0,'3xx':0,'4xx':0,'5xx':0,'0xx':0};
+function updateStatusChart(counts) {
+    const g = { '2xx':0,'3xx':0,'4xx':0,'5xx':0,'0xx':0 };
     for (const [c,n] of Object.entries(counts)) {
-        const k = c==='0'?'0xx':(c[0]+'xx');
-        if (g[k]!==undefined) g[k]+=n; else g['0xx']+=n;
+        const k = c==='0' ? '0xx' : c[0]+'xx';
+        g[k] = (g[k]||0) + n;
     }
-    const labels=[],data=[],colors=[];
-    for (const [k,v] of Object.entries(g)) if(v>0){labels.push(k);data.push(v);colors.push(SC[k]);}
-    statusChart.data.labels=labels;
-    statusChart.data.datasets[0].data=data;
-    statusChart.data.datasets[0].backgroundColor=colors;
+    const labels=[], data=[], colors=[];
+    for (const [k,v] of Object.entries(g)) if (v) { labels.push(k); data.push(v); colors.push(SC_COLORS[k]); }
+    statusChart.data.labels = labels;
+    statusChart.data.datasets[0].data = data;
+    statusChart.data.datasets[0].backgroundColor = colors;
     statusChart.update();
 
-    const list = document.getElementById('status-list');
-    list.innerHTML = '';
+    const row = document.getElementById('status-chips');
+    row.innerHTML = '';
     for (const [c,n] of Object.entries(counts).sort()) {
         if (!n) continue;
-        const cls = c==='0'?'status-0xx':`status-${c[0]}xx`;
+        const cls = c==='0' ? 'chip-0xx' : 'chip-'+c[0]+'xx';
         const chip = document.createElement('span');
-        chip.className = `status-chip ${cls}`;
-        chip.textContent = `HTTP ${c==='0'?'ERR':c}: ${n.toLocaleString()}`;
-        list.appendChild(chip);
+        chip.className = 'chip ' + cls;
+        chip.textContent = (c==='0' ? 'ERR' : 'HTTP '+c) + ': ' + n.toLocaleString();
+        row.appendChild(chip);
     }
 }
 
-function pushRps(rps) {
+function pushRps(v) {
     const d = rpsChart.data;
     d.labels.push(new Date().toLocaleTimeString());
-    d.datasets[0].data.push(+rps.toFixed(1));
+    d.datasets[0].data.push(+v.toFixed(1));
     if (d.labels.length > 120) { d.labels.shift(); d.datasets[0].data.shift(); }
     rpsChart.update();
 }
 
 /* ── Presets ──────────────────────────────────────────────────── */
-function applyPreset(w, r, d) {
+function applyPreset(w,r,d) {
     document.getElementById('workers').value  = w;
     document.getElementById('rps').value      = r;
     document.getElementById('duration').value = d;
@@ -118,34 +283,41 @@ async function startFlood(e) {
 
     setRunning(true);
     clearLogEl();
-    log(`▶ ${method} flood → ${target}`, 'section');
-    log(`  Workers: ${workers}  RPS: ${rps}  Duration: ${duration}s`, 'info');
+    addLog('Starting ' + method + ' flood -> ' + target, 'info');
+    addLog('Workers: ' + workers + '  RPS: ' + rps + '  Duration: ' + duration + 's', 'info');
 
     try {
         const r = await fetch('/api/start', {
-            method: 'POST', headers: {'Content-Type':'application/json'},
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ target, method, workers, rps, duration })
         });
         const d = await r.json();
-        if (!d.ok) { log(`✗ ${d.error}`, 'err'); setRunning(false); return; }
-    } catch(err) {
-        log(`✗ Cannot reach server: ${err.message}`, 'err');
+        if (!d.ok) { addLog('Error: ' + d.error, 'error'); setRunning(false); return; }
+    } catch (err) {
+        addLog('Cannot reach server: ' + err.message, 'error');
         setRunning(false); return;
     }
 
-    if (es) es.close();
+    if (es) { es.close(); es = null; }
     es = new EventSource('/api/stream');
     es.onmessage = ev => onEvent(JSON.parse(ev.data));
-    es.onerror   = ()  => { if(running){ log('⚠ Stream lost','warn'); setRunning(false); } };
+    es.onerror   = () => { if (running) { addLog('Stream disconnected', 'warning'); setRunning(false); } };
 }
 
-/* ── Stop ─────────────────────────────────────────────────────── */
+/* ── Stop flood ───────────────────────────────────────────────── */
 async function stopFlood() {
-    log('⚡ Stop requested…', 'warn');
-    try { await fetch('/api/stop', { method: 'POST' }); } catch {}
+    addLog('Emergency stop sent...', 'warning');
+    try {
+        const r = await fetch('/api/stop', { method: 'POST' });
+        const d = await r.json();
+        if (!d.ok) addLog('Stop request failed', 'error');
+    } catch (err) {
+        addLog('Stop request error: ' + err.message, 'error');
+    }
 }
 
-/* ── SSE events ───────────────────────────────────────────────── */
+/* ── SSE handler ──────────────────────────────────────────────── */
 function onEvent(d) {
     if (d.type === 'tick') {
         const now     = Date.now();
@@ -160,28 +332,41 @@ function onEvent(d) {
         document.getElementById('stat-total').textContent   = (d.total||0).toLocaleString();
         document.getElementById('stat-success').textContent = (d.success||0).toLocaleString();
         document.getElementById('stat-errors').textContent  = (d.errors||0).toLocaleString();
-        document.getElementById('stat-elapsed').textContent = elapsed.toFixed(0)+'s';
-        if (d.p50) document.getElementById('stat-p50').textContent = d.p50.toFixed(0);
-        if (d.p99) document.getElementById('stat-p99').textContent = d.p99.toFixed(0);
-        document.getElementById('progress-fill').style.width  = pct+'%';
-        document.getElementById('progress-label').textContent = pct.toFixed(0)+'%';
+        document.getElementById('stat-elapsed').textContent = elapsed.toFixed(0) + 's';
+        if (d.p50 != null) document.getElementById('stat-p50').textContent = d.p50.toFixed(0);
+        if (d.p99 != null) document.getElementById('stat-p99').textContent = d.p99.toFixed(0);
+        document.getElementById('progress-fill').style.width   = pct + '%';
+        document.getElementById('progress-pct').textContent    = pct.toFixed(0) + '%';
         pushRps(instRps);
-        if (d.status_counts) updateStatus(d.status_counts);
+        if (d.status_counts) updateStatusChart(d.status_counts);
     }
 
-    if (d.type === 'log') log(d.msg, d.level||'info');
+    if (d.type === 'log') {
+        addLog(d.msg, d.level || 'info');
+    }
 
     if (d.type === 'done') {
-        running = false; setRunning(false);
+        setRunning(false);
         if (es) { es.close(); es = null; }
-        log('─────────────────────────────────────', 'muted');
-        log(`✔ ${d.stopped_early?'Stopped early':'Complete'} — ${(d.total||0).toLocaleString()} sent`, 'ok');
-        log(`  RPS: ${(d.rps_actual||0).toFixed(1)}  p50: ${(d.p50||0).toFixed(0)}ms  p99: ${(d.p99||0).toFixed(0)}ms`, 'info');
-        saveHistory({ time: new Date().toLocaleTimeString(), method: d.method||'–',
-            target: d.target||'–', total: d.total||0,
-            rps: (d.rps_actual||0).toFixed(1), p50: (d.p50||0).toFixed(0),
-            p99: (d.p99||0).toFixed(0), success: d.success||0,
-            errors: d.errors||0, duration: (d.wall||0).toFixed(1) });
+        addLog('---', 'info');
+        addLog((d.stopped_early ? 'Stopped' : 'Complete') +
+               ' — ' + (d.total||0).toLocaleString() + ' sent' +
+               '  RPS: ' + (d.rps_actual||0).toFixed(1) +
+               '  p50: ' + (d.p50||0).toFixed(0) + 'ms' +
+               '  p99: ' + (d.p99||0).toFixed(0) + 'ms', 'success');
+        saveHistory({
+            time: new Date().toLocaleTimeString(), method: d.method||'-',
+            target: d.target||'-', total: d.total||0,
+            rps: (d.rps_actual||0).toFixed(1),
+            p50: (d.p50||0).toFixed(0), p99: (d.p99||0).toFixed(0),
+            success: d.success||0, errors: d.errors||0,
+            duration: (d.wall||0).toFixed(1)
+        });
+    }
+
+    if (d.type === 'bot_update') {
+        bots = d.bots || [];
+        renderBots();
     }
 }
 
@@ -190,26 +375,26 @@ function setRunning(r) {
     running = r;
     const sb = document.getElementById('start-btn');
     const st = document.getElementById('stop-btn');
-    const lb = document.getElementById('live-badge');
-    const pw = document.getElementById('progress-wrap');
-    sb.disabled     = r;
-    sb.textContent  = r ? '⏳ Running…' : '🚀 Launch Flood';
+    const lt = document.getElementById('live-tag');
+    const pr = document.getElementById('progress-row');
+    sb.disabled      = r;
+    sb.textContent   = r ? 'Running...' : 'Launch Flood';
     st.style.display = r ? 'inline-flex' : 'none';
-    lb.style.display = r ? 'flex' : 'none';
-    pw.style.display = r ? 'flex' : 'none';
+    lt.style.display = r ? 'inline' : 'none';
+    pr.style.display = r ? 'flex' : 'none';
     if (!r) {
-        document.getElementById('progress-fill').style.width  = '100%';
-        document.getElementById('progress-label').textContent = 'Done';
+        document.getElementById('progress-fill').style.width = '100%';
+        document.getElementById('progress-pct').textContent  = 'Done';
     }
 }
 
 /* ── Log ──────────────────────────────────────────────────────── */
-function log(msg, cls='info') {
+function addLog(msg, cls) {
     const el = document.getElementById('log');
-    const ph = el.querySelector('.muted');
-    if (ph && ph.textContent.includes('Waiting')) ph.remove();
+    const ph = el.querySelector('.log-muted');
+    if (ph) ph.remove();
     const line = document.createElement('div');
-    line.className = `log-line ${cls}`;
+    line.className = 'log-line ' + (cls || 'info');
     line.textContent = msg;
     el.appendChild(line);
     el.scrollTop = el.scrollHeight;
@@ -218,9 +403,9 @@ function log(msg, cls='info') {
 function clearLogEl() { document.getElementById('log').innerHTML = ''; }
 function clearLog() {
     clearLogEl();
-    const l = document.createElement('div');
-    l.className = 'log-line muted'; l.textContent = 'Log cleared.';
-    document.getElementById('log').appendChild(l);
+    const m = document.createElement('span');
+    m.className = 'log-muted'; m.textContent = 'Log cleared.';
+    document.getElementById('log').appendChild(m);
 }
 
 /* ── History ──────────────────────────────────────────────────── */
@@ -231,17 +416,19 @@ function saveHistory(e) {
     renderHistory();
 }
 function renderHistory() {
-    const tb = document.getElementById('history-body');
+    const tb = document.getElementById('hist-body');
     if (!runHistory.length) {
-        tb.innerHTML = '<tr><td colspan="10" class="empty-state">No runs yet</td></tr>';
+        tb.innerHTML = '<tr><td colspan="10" class="muted-cell">No runs yet</td></tr>';
         return;
     }
     tb.innerHTML = runHistory.map(h => `<tr>
         <td>${h.time}</td>
         <td><strong>${h.method}</strong></td>
         <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${h.target}</td>
-        <td>${(+h.total).toLocaleString()}</td><td>${h.rps}</td>
-        <td>${h.p50}ms</td><td>${h.p99}ms</td>
+        <td>${(+h.total).toLocaleString()}</td>
+        <td>${h.rps}</td>
+        <td>${h.p50}ms</td>
+        <td>${h.p99}ms</td>
         <td style="color:#16a34a;font-weight:600">${(+h.success).toLocaleString()}</td>
         <td style="color:#dc2626;font-weight:600">${(+h.errors).toLocaleString()}</td>
         <td>${h.duration}s</td>
@@ -249,4 +436,10 @@ function renderHistory() {
 }
 function clearHistory() {
     runHistory = []; localStorage.removeItem('l7h'); renderHistory();
+}
+
+/* ── Util ─────────────────────────────────────────────────────── */
+function fmtTime(ts) {
+    if (!ts) return '-';
+    return new Date(ts * 1000).toLocaleTimeString();
 }
