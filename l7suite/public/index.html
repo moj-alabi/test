@@ -159,32 +159,41 @@
         <div id="page-bots" class="page">
             <div class="content-area">
                 <div class="grid-1">
+
+                    <!-- Agent generator -->
                     <section class="card">
-                        <div class="card-header">Register New Device</div>
-                        <form class="form" onsubmit="registerBot(event)">
-                            <div class="field-row">
+                        <div class="card-header">Generate Agent</div>
+                        <div class="form">
+                            <p style="font-size:.83rem;color:#64748b;margin-bottom:4px">
+                                Enter your C2 server IP (the machine running <code style="background:#f1f5f9;padding:2px 5px;border-radius:3px">server.py</code>).
+                                The downloaded <strong>agent.py</strong> will have the address baked in — copy it to any device and run
+                                <code style="background:#f1f5f9;padding:2px 5px;border-radius:3px">python3 agent.py</code>.
+                            </p>
+                            <div class="field-row" style="align-items:flex-end">
                                 <div class="field">
-                                    <label>Device ID</label>
-                                    <input type="text" id="bot-id" placeholder="worker-01" required>
+                                    <label>C2 Server IP</label>
+                                    <input type="text" id="c2-host" placeholder="192.168.1.10" style="font-family:monospace">
                                 </div>
-                                <div class="field">
-                                    <label>IP Address</label>
-                                    <input type="text" id="bot-ip" placeholder="192.168.1.100" required>
+                                <div class="field" style="max-width:120px">
+                                    <label>C2 Port</label>
+                                    <input type="number" id="c2-port" value="5000" min="1" max="65535" style="font-family:monospace">
                                 </div>
-                                <div class="field">
-                                    <label>Label (optional)</label>
-                                    <input type="text" id="bot-label" placeholder="Office PC">
+                                <div class="field" style="justify-content:flex-end">
+                                    <button class="btn btn-primary" onclick="downloadAgent()">Download agent.py</button>
                                 </div>
                             </div>
-                            <div class="field" style="background:#1e293b;border-radius:6px;padding:12px;margin-top:4px">
-                                <label style="color:#94a3b8;margin-bottom:8px;display:block">Onboarding script — run on the remote device:</label>
-                                <code id="onboard-script" class="code-block">curl -s -X POST http://YOUR_SERVER_IP:5000/api/bots/register \<br>  -H "Content-Type: application/json" \<br>  -d '{"id":"worker-01","ip":"DEVICE_IP","label":"My Device"}'</code>
-                                <button type="button" class="btn-link" style="margin-top:8px" onclick="copyScript()">Copy script</button>
+                            <div id="agent-status" class="cfg-status"></div>
+
+                            <!-- Preview of how to run it -->
+                            <div style="background:#0f172a;border-radius:8px;padding:14px 16px;margin-top:4px">
+                                <div style="font-size:.73rem;color:#64748b;margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em">Deployment — run on each target device</div>
+                                <pre id="deploy-preview" class="code-block" style="margin:0;background:transparent;padding:0">python3 agent.py</pre>
+                                <div style="font-size:.73rem;color:#475569;margin-top:8px">The agent auto-registers, polls for tasks every 5s, and executes floods when dispatched.</div>
                             </div>
-                            <button type="submit" class="btn btn-primary">Register Device</button>
-                        </form>
+                        </div>
                     </section>
 
+                    <!-- Connected devices -->
                     <section class="card">
                         <div class="card-header">
                             Connected Devices
@@ -192,28 +201,26 @@
                         </div>
                         <div class="table-wrap">
                             <table id="bots-table">
-                                <thead><tr><th>ID</th><th>IP</th><th>Label</th><th>Registered</th><th>Last Seen</th><th>Action</th></tr></thead>
-                                <tbody id="bots-body"><tr><td colspan="6" class="muted-cell">No devices registered</td></tr></tbody>
+                                <thead><tr><th>Status</th><th>ID</th><th>Hostname</th><th>Platform</th><th>IP</th><th>Last Seen</th><th>Action</th></tr></thead>
+                                <tbody id="bots-body"><tr><td colspan="7" class="muted-cell">No devices connected — deploy agent.py to a device to get started</td></tr></tbody>
                             </table>
                         </div>
                     </section>
 
+                    <!-- Agent results -->
                     <section class="card">
-                        <div class="card-header">Keep-Alive Script</div>
-                        <p class="card-desc">Run this on each device to periodically ping the server and keep it marked as active.</p>
-                        <pre class="code-block" id="keepalive-script">#!/bin/bash
-# Run on remote device to keep it marked as online
-SERVER="http://YOUR_SERVER_IP:5000"
-ID="worker-01"
-
-while true; do
-  curl -s -X POST "$SERVER/api/bots/ping" \
-    -H "Content-Type: application/json" \
-    -d "{\"id\":\"$ID\"}" > /dev/null
-  sleep 30
-done</pre>
-                        <button type="button" class="btn-link" onclick="copyKeepalive()">Copy script</button>
+                        <div class="card-header">
+                            Agent Task Results
+                            <button class="btn-link" onclick="clearAgentResults()">Clear</button>
+                        </div>
+                        <div class="table-wrap">
+                            <table id="results-table">
+                                <thead><tr><th>Time</th><th>Agent</th><th>Task</th><th>Sent</th><th>RPS</th><th>Success</th><th>Errors</th><th>Duration</th></tr></thead>
+                                <tbody id="results-body"><tr><td colspan="8" class="muted-cell">No results yet</td></tr></tbody>
+                            </table>
+                        </div>
                     </section>
+
                 </div>
             </div>
         </div>
