@@ -1,4 +1,4 @@
-# L7 Proxy Test Suite
+# Tempest 1.0
 
 Self-contained L7 load-testing tool with a web UI.  
 All traffic is routed through a Squid proxy.

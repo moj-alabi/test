@@ -1,4 +1,4 @@
-/* L7 Proxy Test Suite — app.js */
+/* Tempest 1.0 — app.js */
 
 let es = null, rpsChart = null, statusChart = null;
 let running = false, floodStart = null, floodDur = 30;

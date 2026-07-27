@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-L7 Proxy Test Suite — Flood Engine
+Tempest 1.0 — Flood Engine
 ====================================
 Self-contained flood engine.  Import this module and call run_flood() or
 run_multi_vector().  The server.py wrapper uses it directly.

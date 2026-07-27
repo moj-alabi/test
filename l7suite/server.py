@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-L7 Proxy Test Suite — All-in-one server
+Tempest 1.0 — All-in-one server
 =========================================
 python3 server.py          → http://localhost:5000
 
@@ -636,7 +636,7 @@ class Handler(BaseHTTPRequestHandler):
 if __name__ == "__main__":
     server = HTTPServer(("0.0.0.0", PORT), Handler)
     print("=" * 56)
-    print("  L7 Proxy Test Suite")
+    print("  Tempest 1.0")
     print("  http://localhost:{}".format(PORT))
     print("  Proxy: {}:{}".format(eng.PROXY_HOST, eng.PROXY_PORT))
     print("=" * 56)

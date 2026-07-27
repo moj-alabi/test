@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-L7 Proxy Test Suite — Bot Agent
+Tempest 1.0 — Bot Agent
 ================================
 C2: __C2_HOST__:__C2_PORT__
 
