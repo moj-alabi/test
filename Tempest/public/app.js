@@ -143,7 +143,7 @@ function renderBots() {
     if (bc) bc.textContent = bots.length;
     if (!tb) return;
     if (!bots.length) {
-        tb.innerHTML = '<tr><td colspan="8" class="muted-cell">No devices connected — deploy agent.py to a device to get started</td></tr>';
+        tb.innerHTML = '<tr><td colspan="7" class="muted-cell">No devices connected — deploy agent.py to a device to get started</td></tr>';
     } else {
         const now = Date.now() / 1000;
         tb.innerHTML = bots.map(b => {
@@ -158,8 +158,7 @@ function renderBots() {
                 <td style="font-family:monospace;font-size:.8rem">${b.id}</td>
                 <td>${b.hostname || b.label || '-'}</td>
                 <td style="font-size:.78rem;color:#64748b">${b.platform || '-'}</td>
-                <td style="font-family:monospace;font-size:.8rem;min-width:110px">${b.ip || '—'}</td>
-                <td style="font-family:monospace;font-size:.8rem;color:#6366f1;min-width:110px">${b.public_ip ? b.public_ip : '<span style="color:#94a3b8;font-style:italic">unknown</span>'}</td>
+                <td style="font-family:monospace;font-size:.8rem;min-width:120px">${b.ip || '—'}${b.public_ip ? ' <span style="color:#6366f1;font-size:.75rem">('+b.public_ip+')</span>' : ''}</td>
                 <td style="color:${online ? '#16a34a' : '#94a3b8'};min-width:80px">${agoStr}</td>
                 <td><button class="btn-link" style="color:#ef4444" onclick="removeBot('${b.id}')">Remove</button></td>
             </tr>`;
