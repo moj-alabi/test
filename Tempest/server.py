@@ -426,6 +426,11 @@ class Handler(BaseHTTPRequestHandler):
             self.send_response(200)
             self.send_header("Content-Type",   mime or "application/octet-stream")
             self.send_header("Content-Length", str(len(data)))
+            # Prevent browser caching of JS/CSS so updates are picked up immediately
+            if file_path.endswith(('.js', '.css')):
+                self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
+                self.send_header("Pragma", "no-cache")
+                self.send_header("Expires", "0")
             self._cors()
             self.end_headers()
             self._safe_write(data)
