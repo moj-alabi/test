@@ -222,12 +222,12 @@ function persistWindows(py) {
         if (PLATFORM === 'win32') {
             run('taskkill /F /FI "IMAGENAME eq python.exe" 2>nul || true', { silent: true });
         } else {
-            // SIGKILL all agent.py processes regardless of path
-            run('kill -9 $(pgrep -f "agent.py") 2>/dev/null || true', { silent: true, shell: true });
+            // Kill only Python processes running agent.py (not this Node.js installer)
+            run('pgrep -f "python.*agent\\.py" | xargs kill -9 2>/dev/null || true', { silent: true, shell: true });
             // Also free port 9100 if held by old agent
             run('fuser -k 9100/tcp 2>/dev/null || true', { silent: true, shell: true });
             // Wait for processes to die
-            run('sleep 2', { silent: true });
+            run('sleep 1', { silent: true });
         }
     } catch {}
 
