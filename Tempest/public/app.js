@@ -143,7 +143,7 @@ function renderBots() {
     if (bc) bc.textContent = bots.length;
     if (!tb) return;
     if (!bots.length) {
-        tb.innerHTML = '<tr><td colspan="7" class="muted-cell">No devices connected — deploy agent.py to a device to get started</td></tr>';
+        tb.innerHTML = '<tr><td colspan="8" class="muted-cell">No devices connected — deploy agent.py to a device to get started</td></tr>';
     } else {
         const now = Date.now() / 1000;
         tb.innerHTML = bots.map(b => {
