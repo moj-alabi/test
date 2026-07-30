@@ -556,10 +556,11 @@ class Handler(BaseHTTPRequestHandler):
 
         # ── Agent endpoints (called by agent.py on remote devices) ────────────
         elif path == "/api/agent/register":
-            aid      = str(data.get("id", "")).strip()
-            hostname = str(data.get("hostname", "")).strip()
-            platform = str(data.get("platform", "")).strip()
-            ip       = str(data.get("ip", "")).strip()
+            aid       = str(data.get("id", "")).strip()
+            hostname  = str(data.get("hostname", "")).strip()
+            platform  = str(data.get("platform", "")).strip()
+            ip        = str(data.get("ip", "")).strip()
+            public_ip = str(data.get("public_ip", "")).strip()
             if not aid:
                 self._json({"ok": False, "error": "id required"})
                 return
@@ -568,6 +569,7 @@ class Handler(BaseHTTPRequestHandler):
                 _bots[aid] = {
                     "id":            aid,
                     "ip":            ip,
+                    "public_ip":     public_ip,
                     "hostname":      hostname,
                     "platform":      platform,
                     "label":         hostname or aid,

