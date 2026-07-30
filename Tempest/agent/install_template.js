@@ -112,27 +112,35 @@ async function installPython() {
 
 // ── Persist ────────────────────────────────────────────────────────────────
 function persistLinux(py) {
-    // Try systemd first
-    if (hasCmd('systemctl')) {
-        const svc = `[Unit]\nDescription=L7 Agent\nAfter=network.target\n\n[Service]\nExecStart=${py} ${AGENT_FILE}\nRestart=always\nRestartSec=10\nStandardOutput=append:${LOG_FILE}\nStandardError=append:${LOG_FILE}\n\n[Install]\nWantedBy=multi-user.target\n`;
+    // Try systemd first (requires root)
+    if (hasCmd('systemctl') && process.getuid && process.getuid() === 0) {
+        const svc = `[Unit]\nDescription=Tempest Agent\nAfter=network.target\n\n[Service]\nExecStart=${py} ${AGENT_FILE}\nRestart=always\nRestartSec=10\nStandardOutput=append:${LOG_FILE}\nStandardError=append:${LOG_FILE}\n\n[Install]\nWantedBy=multi-user.target\n`;
         const svcPath = '/etc/systemd/system/l7agent.service';
         try {
-            fs.writeFileSync('/tmp/l7agent.service', svc);
-            run(`mv /tmp/l7agent.service ${svcPath} && systemctl daemon-reload && systemctl enable l7agent && systemctl start l7agent`);
-            log('Installed as systemd service (l7agent)');
+            fs.writeFileSync(svcPath, svc);
+            run(`systemctl daemon-reload && systemctl enable l7agent && systemctl start l7agent`);
+            log('Installed as systemd service (l7agent) — starts on boot');
             return;
-        } catch {}
+        } catch (e) {
+            warn('systemd install failed: ' + e.message);
+        }
+    } else if (hasCmd('systemctl') && process.getuid && process.getuid() !== 0) {
+        warn('Not root — skipping systemd, falling back to crontab');
     }
-    // Cron fallback
+    // Cron fallback (works without root)
     try {
-        const existing = execSync('crontab -l 2>/dev/null', { stdio: 'pipe' }).toString();
-        const cleaned  = existing.split('\n').filter(l => !l.includes('l7agent')).join('\n');
-        const entry    = `${cleaned}\n@reboot ${py} ${AGENT_FILE} >> ${LOG_FILE} 2>&1\n`;
-        const tmp      = path.join(os.tmpdir(), 'l7cron');
+        let existing = '';
+        try { existing = execSync('crontab -l 2>/dev/null', { stdio: 'pipe' }).toString(); } catch {}
+        const cleaned = existing.split('\n').filter(l => !l.includes('l7agent') && l.trim()).join('\n');
+        const entry   = `${cleaned}\n@reboot ${py} ${AGENT_FILE} >> ${LOG_FILE} 2>&1\n`;
+        const tmp     = path.join(os.tmpdir(), 'l7cron');
         fs.writeFileSync(tmp, entry);
         run(`crontab ${tmp}`);
-        log('Added to crontab (@reboot)');
-    } catch { warn('Could not set persistence — run manually on reboot'); }
+        log('Persistence set via crontab @reboot');
+    } catch (e) {
+        warn('Could not set crontab persistence: ' + e.message);
+        warn('To persist manually: echo "@reboot ' + py + ' ' + AGENT_FILE + '" | crontab -');
+    }
 }
 
 function persistMac(py) {
