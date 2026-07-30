@@ -216,24 +216,8 @@ function persistWindows(py) {
     if (!py) py = await installPython();
     log(`Using Python: ${py}`);
 
-    // Kill any existing agent processes via PID file (safe — no shell pattern matching)
-    info('Checking for existing agent processes...');
-    const PID_FILE_EARLY = path.join(AGENT_DIR, 'agent.pid');
-    if (fs.existsSync(PID_FILE_EARLY)) {
-        try {
-            const oldPid = parseInt(fs.readFileSync(PID_FILE_EARLY, 'utf8').trim());
-            if (oldPid > 0) {
-                try {
-                    process.kill(oldPid, 'SIGKILL');
-                    log(`Stopped existing agent (PID ${oldPid})`);
-                    await new Promise(r => setTimeout(r, 500));
-                } catch {} // already dead
-            }
-            fs.unlinkSync(PID_FILE_EARLY);
-        } catch {}
-    } else {
-        info('No existing agent PID file found');
-    }
+    // Note: duplicate agent prevention is handled by _enforce_single_instance() in agent.py
+    // (reads agent.pid, kills old PID, writes new PID on startup)
 
     // Download fresh agent.py (but KEEP existing .agent_id so identity is preserved)
     const ID_FILE = path.join(AGENT_DIR, '.agent_id');
