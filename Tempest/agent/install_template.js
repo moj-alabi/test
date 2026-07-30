@@ -237,14 +237,48 @@ function persistWindows(py) {
 
     // ── Optional: configure Prometheus scrape ─────────────────────────────
     info('Checking for Prometheus...');
+    // Comprehensive search — covers apt install, manual install, snap, homebrew, custom dirs
     const promCfgPaths = [
         '/etc/prometheus/prometheus.yml',
         '/usr/local/etc/prometheus/prometheus.yml',
+        '/usr/share/prometheus/prometheus.yml',
+        '/opt/prometheus/prometheus.yml',
+        '/opt/prometheus/prometheus.yaml',
+        '/etc/prometheus/prometheus.yaml',
         path.join(os.homedir(), 'prometheus.yml'),
+        path.join(os.homedir(), 'prometheus/prometheus.yml'),
+        path.join(os.homedir(), 'prometheus-2*/prometheus.yml'),   // versioned tar extract
     ];
+    // Also try to find config via prometheus binary
     let promCfg = null;
-    for (const p of promCfgPaths) {
-        if (fs.existsSync(p)) { promCfg = p; break; }
+    if (!promCfg) {
+        try {
+            const binPath = execSync('which prometheus 2>/dev/null || command -v prometheus 2>/dev/null', { stdio: 'pipe' }).toString().trim();
+            if (binPath) {
+                // Try common relative config locations from binary dir
+                const binDir = path.dirname(binPath);
+                const guesses = [
+                    path.join(binDir, '..', 'etc', 'prometheus.yml'),
+                    path.join(binDir, 'prometheus.yml'),
+                    path.join(binDir, '..', 'prometheus.yml'),
+                ];
+                for (const g of guesses) {
+                    try { if (fs.existsSync(path.resolve(g))) { promCfg = path.resolve(g); break; } } catch {}
+                }
+            }
+        } catch {}
+    }
+    if (!promCfg) {
+        // find command as last resort (fast, stops at first match)
+        try {
+            const found = execSync('find /etc /opt /usr /root /home -name "prometheus.yml" -o -name "prometheus.yaml" 2>/dev/null | head -1', { stdio: 'pipe', shell: true }).toString().trim();
+            if (found) promCfg = found;
+        } catch {}
+    }
+    if (!promCfg) {
+        for (const p of promCfgPaths) {
+            try { if (fs.existsSync(p)) { promCfg = p; break; } } catch {}
+        }
     }
     if (promCfg) {
         try {
