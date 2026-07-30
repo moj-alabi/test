@@ -584,10 +584,15 @@ class Handler(BaseHTTPRequestHandler):
             aid = str(data.get("id", "")).strip()
             live_metrics = data.get("metrics", {})
             with _bots_lock:
-                if aid in _bots:
+                known = aid in _bots
+                if known:
                     _bots[aid]["last_seen"] = time.time()
                     if live_metrics:
                         _bots[aid]["live_metrics"] = live_metrics
+            if not known:
+                # Server was restarted — tell agent to re-register
+                self._json({"ok": False, "reregister": True, "stop": False})
+                return
             # Embed stop signal in ping response so busy agents see it immediately
             self._json({"ok": True, "stop": eng._STOP.is_set()})
 

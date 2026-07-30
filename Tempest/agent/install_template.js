@@ -133,15 +133,28 @@ function persistLinux(py) {
     try {
         let existing = '';
         try { existing = execSync('crontab -l 2>/dev/null', { stdio: 'pipe' }).toString(); } catch {}
+        // Remove any old l7agent entries then add fresh one
         const cleaned = existing.split('\n').filter(l => !l.includes('l7agent') && l.trim()).join('\n');
         const entry   = `${cleaned}\n@reboot ${py} ${AGENT_FILE} >> ${LOG_FILE} 2>&1\n`;
         const tmp     = path.join(os.tmpdir(), 'l7cron');
         fs.writeFileSync(tmp, entry);
-        run(`crontab ${tmp}`);
+        execSync(`crontab ${tmp}`, { stdio: 'pipe' });
         log('Persistence set via crontab @reboot');
+        // Ensure cron daemon is running (Kali often has it disabled by default)
+        try {
+            execSync('systemctl is-active --quiet cron 2>/dev/null || systemctl start cron 2>/dev/null || service cron start 2>/dev/null || true', { stdio: 'pipe', shell: true });
+        } catch {}
+        // Verify it's in crontab
+        try {
+            const check = execSync('crontab -l 2>/dev/null', { stdio: 'pipe' }).toString();
+            if (check.includes('l7agent')) {
+                log('Crontab entry verified ✓');
+            }
+        } catch {}
     } catch (e) {
         warn('Could not set crontab persistence: ' + e.message);
-        warn('To persist manually: echo "@reboot ' + py + ' ' + AGENT_FILE + '" | crontab -');
+        warn('To persist manually, run:');
+        console.log(`  (crontab -l 2>/dev/null; echo "@reboot ${py} ${AGENT_FILE} >> ${LOG_FILE} 2>&1") | crontab -`);
     }
 }
 
