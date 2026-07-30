@@ -55,19 +55,61 @@ else
     git -C "$REPO_DIR" log --oneline "${BEFORE}..${AFTER}"
 fi
 
-# ── Restart service ────────────────────────────────────────
-if command -v systemctl >/dev/null 2>&1 && systemctl list-units --type=service 2>/dev/null | grep -q "${SERVICE_NAME}.service"; then
-    info "Restarting systemd service '${SERVICE_NAME}'..."
-    systemctl restart "$SERVICE_NAME"
-    sleep 2
-    if systemctl is-active --quiet "$SERVICE_NAME"; then
-        log "Service '${SERVICE_NAME}' is running"
-    else
-        warn "Service may have failed — check: journalctl -u ${SERVICE_NAME} -n 30"
+# ── Create systemd service if missing, then restart ───────
+TEMPEST_DIR="${REPO_DIR}/Tempest"
+[[ -f "$SCRIPT_DIR/server.py" ]] && TEMPEST_DIR="$SCRIPT_DIR"
+
+SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
+
+if command -v systemctl >/dev/null 2>&1; then
+    # Create service if it doesn't exist yet
+    if [[ ! -f "$SERVICE_FILE" ]]; then
+        if [[ $EUID -ne 0 ]]; then
+            warn "Service file not found and not root — cannot create it."
+            warn "Run with sudo to auto-create the systemd service, or restart manually:"
+            warn "  cd ${TEMPEST_DIR} && python3 server.py"
+        else
+            PYTHON_BIN=$(command -v python3)
+            info "Creating systemd service at ${SERVICE_FILE}..."
+            cat > "$SERVICE_FILE" <<EOF
+[Unit]
+Description=Tempest 1.0 C2 Server
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=${TEMPEST_DIR}
+ExecStart=${PYTHON_BIN} ${TEMPEST_DIR}/server.py
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+EOF
+            systemctl daemon-reload
+            systemctl enable "$SERVICE_NAME" --quiet
+            log "Service created and enabled"
+        fi
+    fi
+
+    # Restart if service file exists
+    if [[ -f "$SERVICE_FILE" ]]; then
+        info "Restarting systemd service '${SERVICE_NAME}'..."
+        systemctl restart "$SERVICE_NAME"
+        sleep 2
+        if systemctl is-active --quiet "$SERVICE_NAME"; then
+            log "Service '${SERVICE_NAME}' is running ✓"
+            log "Logs: journalctl -u ${SERVICE_NAME} -f"
+        else
+            warn "Service may have failed — check: journalctl -u ${SERVICE_NAME} -n 30"
+        fi
     fi
 else
-    warn "systemd service '${SERVICE_NAME}' not found."
-    warn "Restart manually: cd ${REPO_DIR}/Tempest && python3 server.py"
+    warn "systemctl not available — restart manually:"
+    warn "  cd ${TEMPEST_DIR} && python3 server.py"
 fi
 
 echo ""
