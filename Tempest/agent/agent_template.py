@@ -389,6 +389,12 @@ def main():
         if r.get("ok"):
             print("[agent] Registered with C2")
             break
+        if r.get("error") == "already_registered":
+            print("[agent] ERROR: Another agent ({}) is already active on this host.".format(
+                r.get("existing_id", "unknown")))
+            print("[agent] Remove the existing agent from the dashboard first, then reinstall.")
+            print("[agent] Exiting.")
+            sys.exit(1)
         print("[agent] Registration failed: {} — retrying in 5s".format(r.get("error","")))
         time.sleep(5)
 

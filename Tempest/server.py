@@ -571,6 +571,18 @@ class Handler(BaseHTTPRequestHandler):
                 return
             now = time.time()
             with _bots_lock:
+                # Block duplicate: reject if DIFFERENT agent ID already active on same hostname
+                for existing_id, existing_bot in _bots.items():
+                    if (existing_id != aid
+                            and existing_bot.get("hostname") == hostname
+                            and (now - existing_bot.get("last_seen", 0)) < 60):
+                        self._json({
+                            "ok": False,
+                            "error": "already_registered",
+                            "existing_id": existing_id,
+                            "msg": "An agent is already active on this host. Remove it from the dashboard first."
+                        })
+                        return
                 _bots[aid] = {
                     "id":            aid,
                     "ip":            ip,
