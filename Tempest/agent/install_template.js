@@ -216,20 +216,24 @@ function persistWindows(py) {
     if (!py) py = await installPython();
     log(`Using Python: ${py}`);
 
-    // Kill any existing agent processes before installing (aggressive)
-    info('Stopping any existing agent processes...');
-    try {
-        if (PLATFORM === 'win32') {
-            run('taskkill /F /FI "IMAGENAME eq python.exe" 2>nul || true', { silent: true });
-        } else {
-            // Kill only Python processes running agent.py (not this Node.js installer)
-            run('pgrep -f "python.*agent\\.py" | xargs kill -9 2>/dev/null || true', { silent: true, shell: true });
-            // Also free port 9100 if held by old agent
-            run('fuser -k 9100/tcp 2>/dev/null || true', { silent: true, shell: true });
-            // Wait for processes to die
-            run('sleep 1', { silent: true });
-        }
-    } catch {}
+    // Kill any existing agent processes via PID file (safe — no shell pattern matching)
+    info('Checking for existing agent processes...');
+    const PID_FILE_EARLY = path.join(AGENT_DIR, 'agent.pid');
+    if (fs.existsSync(PID_FILE_EARLY)) {
+        try {
+            const oldPid = parseInt(fs.readFileSync(PID_FILE_EARLY, 'utf8').trim());
+            if (oldPid > 0) {
+                try {
+                    process.kill(oldPid, 'SIGKILL');
+                    log(`Stopped existing agent (PID ${oldPid})`);
+                    await new Promise(r => setTimeout(r, 500));
+                } catch {} // already dead
+            }
+            fs.unlinkSync(PID_FILE_EARLY);
+        } catch {}
+    } else {
+        info('No existing agent PID file found');
+    }
 
     // Download fresh agent.py (but KEEP existing .agent_id so identity is preserved)
     const ID_FILE = path.join(AGENT_DIR, '.agent_id');
