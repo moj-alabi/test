@@ -216,14 +216,18 @@ function persistWindows(py) {
     if (!py) py = await installPython();
     log(`Using Python: ${py}`);
 
-    // Kill any existing agent processes before installing
+    // Kill any existing agent processes before installing (aggressive)
     info('Stopping any existing agent processes...');
     try {
         if (PLATFORM === 'win32') {
-            run('taskkill /F /IM python.exe /FI "WINDOWTITLE eq agent*" 2>nul || true', { silent: true });
+            run('taskkill /F /FI "IMAGENAME eq python.exe" 2>nul || true', { silent: true });
         } else {
-            run('pkill -f "agent.py" 2>/dev/null || true', { silent: true });
-            run('sleep 1', { silent: true });
+            // SIGKILL all agent.py processes regardless of path
+            run('kill -9 $(pgrep -f "agent.py") 2>/dev/null || true', { silent: true, shell: true });
+            // Also free port 9100 if held by old agent
+            run('fuser -k 9100/tcp 2>/dev/null || true', { silent: true, shell: true });
+            // Wait for processes to die
+            run('sleep 2', { silent: true });
         }
     } catch {}
 
