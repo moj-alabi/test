@@ -588,7 +588,8 @@ class Handler(BaseHTTPRequestHandler):
                     _bots[aid]["last_seen"] = time.time()
                     if live_metrics:
                         _bots[aid]["live_metrics"] = live_metrics
-            self._json({"ok": True})
+            # Embed stop signal in ping response so busy agents see it immediately
+            self._json({"ok": True, "stop": eng._STOP.is_set()})
 
         elif path == "/api/agent/result":
             aid  = str(data.get("agent_id", "")).strip()

