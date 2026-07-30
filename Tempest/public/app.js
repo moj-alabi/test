@@ -158,9 +158,9 @@ function renderBots() {
                 <td style="font-family:monospace;font-size:.8rem">${b.id}</td>
                 <td>${b.hostname || b.label || '-'}</td>
                 <td style="font-size:.78rem;color:#64748b">${b.platform || '-'}</td>
-                <td style="font-family:monospace;font-size:.8rem">${b.ip || '-'}</td>
-                <td style="font-family:monospace;font-size:.8rem;color:#6366f1">${b.public_ip || '<span style="color:#94a3b8">-</span>'}</td>
-                <td style="color:${online ? '#16a34a' : '#94a3b8'}">${agoStr}</td>
+                <td style="font-family:monospace;font-size:.8rem;min-width:110px">${b.ip || '—'}</td>
+                <td style="font-family:monospace;font-size:.8rem;color:#6366f1;min-width:110px">${b.public_ip ? b.public_ip : '<span style="color:#94a3b8;font-style:italic">unknown</span>'}</td>
+                <td style="color:${online ? '#16a34a' : '#94a3b8'};min-width:80px">${agoStr}</td>
                 <td><button class="btn-link" style="color:#ef4444" onclick="removeBot('${b.id}')">Remove</button></td>
             </tr>`;
         }).join('');
