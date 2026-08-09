@@ -2621,7 +2621,7 @@ Which combination of algorithms BEST satisfies ALL requirements?]]></text></ques
   <questiontext format="html"><text><![CDATA[Which standard language and format is used to share threat intelligence information (indicators of compromise, attack patterns) between organizations and security tools?]]></text></questiontext>
   <generalfeedback format="html"><text><![CDATA[STIX (Structured Threat Information eXpression) is the language for expressing threat intelligence. TAXII (Trusted Automated eXchange of Intelligence Information) is the transport protocol for sharing STIX content. Together: STIX/TAXII. MISP (Malware Information Sharing Platform) is an open-source threat intelligence platform. CybOX was a predecessor to STIX. OpenIOC is another IoC format (Mandiant). STIX/TAXII is the current industry standard.]]></text></generalfeedback>
   <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
-  <single>true</small><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
   <answer fraction="100" format="html"><text>STIX (Structured Threat Information eXpression) transported via TAXII</text>
     <feedback format="html"><text>Correct. STIX defines the format for threat intelligence objects (indicators, TTPs, threat actors), and TAXII provides the transport mechanism for sharing them between organizations and tools.</text></feedback></answer>
   <answer fraction="0" format="html"><text>CSV files shared via encrypted email</text>
