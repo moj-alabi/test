@@ -1,0 +1,1476 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<quiz>
+
+<!-- ============================================================ -->
+<!--  CATEGORY: SY0-701 / 1. General Security Concepts           -->
+<!-- ============================================================ -->
+<question type="category">
+  <category><text>$course$/SY0-701/1. General Security Concepts</text></category>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-701 GSC-001</text></name>
+  <questiontext format="html"><text><![CDATA[Which of the following BEST describes the concept of least privilege?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[Least privilege means giving users, accounts, or processes only the minimum access rights needed to perform their job functions. This limits the blast radius if credentials are compromised or an insider threat occurs.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>Users are granted only the permissions necessary to perform their assigned tasks</text>
+    <feedback format="html"><text>Correct. Least privilege restricts access to only what is needed for a specific role or task, reducing the attack surface.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Users are granted the same level of access as their manager</text>
+    <feedback format="html"><text>Incorrect. Inherited access from a manager does not necessarily reflect what a user needs for their own tasks.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Users are denied access to all systems by default and must request individual permissions</text>
+    <feedback format="html"><text>Incorrect. While default-deny is a related concept, least privilege is specifically about granting only the minimum necessary access, not a blanket denial.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Users are granted temporary access that expires after 24 hours</text>
+    <feedback format="html"><text>Incorrect. Time-based access is a separate control; least privilege focuses on the scope, not the duration, of access.</text></feedback></answer>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-701 GSC-002</text></name>
+  <questiontext format="html"><text><![CDATA[A security analyst needs to ensure that an attacker who compromises one system cannot easily move laterally to other systems. Which principle BEST addresses this?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[Network segmentation and the Zero Trust principle of microsegmentation limit lateral movement. Defense in depth layers multiple controls so no single failure leads to full compromise.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>Defense in depth</text>
+    <feedback format="html"><text>Correct. Defense in depth uses layered security controls so that if one layer fails, others remain to limit lateral movement.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Non-repudiation</text>
+    <feedback format="html"><text>Incorrect. Non-repudiation ensures actions cannot be denied; it does not prevent lateral movement.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Data minimization</text>
+    <feedback format="html"><text>Incorrect. Data minimization reduces collected data; it is a privacy principle, not a network security movement control.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Accountability</text>
+    <feedback format="html"><text>Incorrect. Accountability tracks who did what, but does not inherently stop an attacker from moving laterally.</text></feedback></answer>
+</question>
+
+<question type="truefalse">
+  <name><text>SY0-701 GSC-003</text></name>
+  <questiontext format="html"><text><![CDATA[True or False: A symmetric encryption algorithm uses two mathematically related keys — one public and one private.]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[This statement is FALSE. Symmetric encryption uses the SAME key for both encryption and decryption. Asymmetric encryption uses a mathematically related key pair (public and private). AES is a common symmetric algorithm; RSA is asymmetric.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>1</penalty><hidden>0</hidden>
+  <answer fraction="0"><text>true</text><feedback format="html"><text>Incorrect. Symmetric encryption uses the same single key for both encryption and decryption. You are describing asymmetric encryption.</text></feedback></answer>
+  <answer fraction="100"><text>false</text><feedback format="html"><text>Correct. Symmetric encryption uses one shared key. Asymmetric encryption uses a public/private key pair.</text></feedback></answer>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-701 GSC-004</text></name>
+  <questiontext format="html"><text><![CDATA[Which of the following authentication factors is classified as "something you are"?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[The three classic authentication factors are: Something you know (password, PIN), Something you have (smart card, token), Something you are (biometrics — fingerprint, retina scan, facial recognition). A fourth factor increasingly recognized is "somewhere you are" (geolocation).]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>Fingerprint scan</text>
+    <feedback format="html"><text>Correct. A fingerprint scan is biometric and falls under "something you are" — a physical characteristic unique to the individual.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Smart card</text>
+    <feedback format="html"><text>Incorrect. A smart card is "something you have" — a physical token you carry.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>PIN number</text>
+    <feedback format="html"><text>Incorrect. A PIN is "something you know" — knowledge-based authentication.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>One-time password from an authenticator app</text>
+    <feedback format="html"><text>Incorrect. A TOTP from an authenticator app is "something you have" — the app/device is what you possess.</text></feedback></answer>
+</question>
+
+<question type="matching">
+  <name><text>SY0-701 GSC-005 Matching</text></name>
+  <questiontext format="html"><text><![CDATA[Match each cryptographic algorithm to its correct type.]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[AES (Advanced Encryption Standard) is symmetric block cipher. RSA is asymmetric. SHA-256 is a hashing algorithm (produces a digest, not encryption). ECC (Elliptic Curve Cryptography) is asymmetric and efficient for mobile/IoT.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <shuffleanswers>true</shuffleanswers>
+  <subquestion format="html"><text>AES</text><answer><text>Symmetric encryption</text></answer></subquestion>
+  <subquestion format="html"><text>RSA</text><answer><text>Asymmetric encryption</text></answer></subquestion>
+  <subquestion format="html"><text>SHA-256</text><answer><text>Hashing algorithm</text></answer></subquestion>
+  <subquestion format="html"><text>ECC</text><answer><text>Asymmetric encryption (elliptic curve)</text></answer></subquestion>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-701 GSC-006</text></name>
+  <questiontext format="html"><text><![CDATA[A company wants to verify the integrity of files downloaded from a vendor's website. Which technology should be used?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[Hashing (e.g., SHA-256) creates a fixed-length digest from a file. If even one bit changes, the hash changes completely (avalanche effect). Users compare the published hash with the hash of the downloaded file to verify integrity. Digital signatures add non-repudiation on top of hashing.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>Hashing (e.g., SHA-256 checksum)</text>
+    <feedback format="html"><text>Correct. A hash value/checksum allows the recipient to verify the file has not been altered in transit or at rest.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Symmetric encryption with AES-256</text>
+    <feedback format="html"><text>Incorrect. Encryption protects confidentiality, not integrity verification by an external party.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Steganography</text>
+    <feedback format="html"><text>Incorrect. Steganography hides data within other data; it does not verify file integrity.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Key escrow</text>
+    <feedback format="html"><text>Incorrect. Key escrow stores cryptographic keys with a third party for recovery purposes — unrelated to file integrity.</text></feedback></answer>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-701 GSC-007</text></name>
+  <questiontext format="html"><text><![CDATA[Which of the following BEST represents the concept of Zero Trust architecture?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[Zero Trust is built on the principle of "never trust, always verify." No user or device is inherently trusted, whether inside or outside the network perimeter. Every access request must be authenticated, authorized, and continuously validated.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>Never trust, always verify — all users and devices must be authenticated regardless of location</text>
+    <feedback format="html"><text>Correct. Zero Trust removes the concept of a trusted internal network. Every request is verified before access is granted.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Trust internal network users but verify all external connections</text>
+    <feedback format="html"><text>Incorrect. This describes the traditional perimeter-based model — the opposite of Zero Trust.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Encrypt all data at rest and in transit without requiring authentication</text>
+    <feedback format="html"><text>Incorrect. Encryption is important but is only one component; Zero Trust requires authentication and authorization, not just encryption.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Allow unrestricted access for privileged administrators</text>
+    <feedback format="html"><text>Incorrect. Zero Trust applies to ALL users, including administrators. Privileged accounts are often the highest-risk targets.</text></feedback></answer>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-701 GSC-008 Multi-select</text></name>
+  <questiontext format="html"><text><![CDATA[Which TWO of the following are examples of a "something you have" authentication factor? (Select TWO)]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA["Something you have" refers to physical or digital tokens: smart cards, hardware security keys (YubiKey), authenticator apps, and OTP tokens. Passwords and PINs are "something you know"; fingerprints are "something you are".]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>false</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="50" format="html"><text>Hardware security key (e.g., YubiKey)</text>
+    <feedback format="html"><text>Correct. A YubiKey is a physical device you possess — "something you have."</text></feedback></answer>
+  <answer fraction="50" format="html"><text>TOTP from a mobile authenticator app</text>
+    <feedback format="html"><text>Correct. The mobile device with the authenticator app is what you "have" — possession of the device generates the code.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Retina scan</text>
+    <feedback format="html"><text>Incorrect. A retina scan is biometric — "something you are."</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Password</text>
+    <feedback format="html"><text>Incorrect. A password is "something you know."</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Security question answers</text>
+    <feedback format="html"><text>Incorrect. Security questions are knowledge-based — "something you know."</text></feedback></answer>
+</question>
+
+<!-- ============================================================ -->
+<!--  CATEGORY: SY0-701 / 2. Threats, Vulnerabilities & Mitigations -->
+<!-- ============================================================ -->
+<question type="category">
+  <category><text>$course$/SY0-701/2. Threats Vulnerabilities and Mitigations</text></category>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-701 TVM-001</text></name>
+  <questiontext format="html"><text><![CDATA[An attacker sends an email appearing to be from the CEO asking an employee to wire $50,000 to a new vendor account. What type of attack is this?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[This is a Business Email Compromise (BEC) / Spear Phishing / Whaling attack. Whaling specifically targets high-profile individuals (executives). The attacker impersonates the CEO (spear phishing). BEC attacks cost businesses billions annually and rely on social engineering rather than malware.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>Whaling / Business Email Compromise (BEC)</text>
+    <feedback format="html"><text>Correct. Whaling targets senior executives. BEC impersonates executives or trusted parties to manipulate employees into transferring money or data.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Vishing</text>
+    <feedback format="html"><text>Incorrect. Vishing is voice phishing — conducted over phone calls, not email.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Smishing</text>
+    <feedback format="html"><text>Incorrect. Smishing uses SMS/text messages to deceive victims, not email.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Pretexting</text>
+    <feedback format="html"><text>Partially related, but pretexting is the technique of creating a fabricated scenario — this attack is more specifically classified as BEC/Whaling.</text></feedback></answer>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-701 TVM-002</text></name>
+  <questiontext format="html"><text><![CDATA[A vulnerability scanner reports a critical finding with a CVSS score of 9.8. The asset affected is an internet-facing web server. Which action should be taken FIRST?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[CVSS 9.8 is Critical (9.0–10.0). For internet-facing systems, immediate patching or mitigation is the priority. The risk equation is: Risk = Likelihood × Impact. High CVSS + internet-facing = highest priority. Compensating controls (WAF rules, isolation) may be applied while a patch is being tested.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>Immediately patch or apply a compensating control while a patch is prepared</text>
+    <feedback format="html"><text>Correct. A CVSS 9.8 vulnerability on an internet-facing server is critical and requires immediate remediation or mitigation.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Schedule the patch for the next quarterly maintenance window</text>
+    <feedback format="html"><text>Incorrect. A critical internet-facing vulnerability cannot wait for a routine maintenance window — it could be exploited within hours of public disclosure.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Accept the risk and document it in the risk register</text>
+    <feedback format="html"><text>Incorrect. Risk acceptance might be appropriate for low-severity findings with limited business impact, not a critical internet-facing vulnerability.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Assign to the development team for review next sprint</text>
+    <feedback format="html"><text>Incorrect. Agile sprint cycles are not appropriate timelines for critical security vulnerabilities on production internet-facing systems.</text></feedback></answer>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-701 TVM-003</text></name>
+  <questiontext format="html"><text><![CDATA[Which of the following BEST describes a supply chain attack?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[A supply chain attack targets a less-secure element in the supply chain — a vendor, software component, or hardware manufacturer — to compromise the ultimate target. The SolarWinds attack (2020) is the most notable example: malicious code was inserted into a software update and distributed to thousands of organizations.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>Compromising a vendor or third-party software to attack downstream customers</text>
+    <feedback format="html"><text>Correct. Supply chain attacks exploit trusted relationships between organizations and their suppliers. The SolarWinds compromise is the canonical example.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Intercepting communications between a buyer and seller during an online transaction</text>
+    <feedback format="html"><text>Incorrect. This describes a man-in-the-middle (MitM) attack, not a supply chain attack.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Purchasing stolen credentials from dark web marketplaces</text>
+    <feedback format="html"><text>Incorrect. Credential purchasing is a form of credential stuffing or account takeover preparation — not a supply chain attack.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Exploiting a zero-day vulnerability in a web application</text>
+    <feedback format="html"><text>Incorrect. Zero-day exploitation is a vulnerability-based attack. A supply chain attack focuses on the trusted supplier relationship.</text></feedback></answer>
+</question>
+
+<question type="truefalse">
+  <name><text>SY0-701 TVM-004</text></name>
+  <questiontext format="html"><text><![CDATA[True or False: A zero-day vulnerability is one for which a patch has already been released but not yet applied.]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[FALSE. A zero-day vulnerability is one that is unknown to the vendor (or public) and has NO patch available. The "zero" refers to zero days of warning. An unpatched known vulnerability is simply called an unpatched vulnerability — a different (but also serious) category.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>1</penalty><hidden>0</hidden>
+  <answer fraction="0"><text>true</text><feedback format="html"><text>Incorrect. A zero-day is unknown to the vendor — no patch exists yet. You are describing an unpatched known vulnerability.</text></feedback></answer>
+  <answer fraction="100"><text>false</text><feedback format="html"><text>Correct. A zero-day has no available patch. It is unknown to (or unaddressed by) the software vendor.</text></feedback></answer>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-701 TVM-005</text></name>
+  <questiontext format="html"><text><![CDATA[An attacker gains access to a system and remains undetected for 200 days, exfiltrating data slowly. What term describes this type of attack?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[An Advanced Persistent Threat (APT) is characterized by: long dwell time (weeks to years), state-sponsored or highly resourced attackers, stealth and persistence, and a specific high-value target. The average dwell time for APTs is 197 days according to industry reports.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>Advanced Persistent Threat (APT)</text>
+    <feedback format="html"><text>Correct. APTs are stealthy, long-duration attacks often performed by nation-state actors or highly sophisticated groups targeting specific organizations.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Ransomware attack</text>
+    <feedback format="html"><text>Incorrect. Ransomware is typically fast and noisy — designed to encrypt and demand payment quickly. APTs focus on stealth.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Denial of Service (DoS)</text>
+    <feedback format="html"><text>Incorrect. DoS is designed to disrupt availability, not to stealthily exfiltrate data over months.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Script kiddie attack</text>
+    <feedback format="html"><text>Incorrect. Script kiddies use simple, pre-built tools without sophistication. A 200-day undetected intrusion requires significant expertise.</text></feedback></answer>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-701 TVM-006</text></name>
+  <questiontext format="html"><text><![CDATA[Which of the following attack types is specifically designed to overwhelm a target by using a network of compromised machines?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[A Distributed Denial of Service (DDoS) attack uses a botnet — a network of compromised machines (bots/zombies) — to flood the target with traffic, exhausting resources. Amplification attacks (DNS, NTP) multiply traffic from fewer sources.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>Distributed Denial of Service (DDoS)</text>
+    <feedback format="html"><text>Correct. DDoS leverages a botnet of thousands of compromised systems to overwhelm a target with traffic from multiple sources, making it very difficult to block.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Man-in-the-Middle (MitM)</text>
+    <feedback format="html"><text>Incorrect. MitM intercepts communications — it does not use a network of bots to flood a target.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>SQL Injection</text>
+    <feedback format="html"><text>Incorrect. SQL injection targets database input validation to retrieve or manipulate data — it is not a flooding attack.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Rainbow table attack</text>
+    <feedback format="html"><text>Incorrect. A rainbow table attack is used to crack password hashes, not to perform denial of service.</text></feedback></answer>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-701 TVM-007</text></name>
+  <questiontext format="html"><text><![CDATA[A user receives an email with a link that leads to a fake login page mimicking their bank's website. What type of attack is this?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[Phishing attacks use deceptive emails with malicious links to fake websites (credential harvesting pages). This is distinct from spear phishing (targeted), whaling (targeting executives), and vishing (via phone). Anti-phishing controls include email filtering, MFA, and user awareness training.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>Phishing</text>
+    <feedback format="html"><text>Correct. Phishing uses deceptive emails to direct users to fake websites to steal credentials or install malware.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Pharming</text>
+    <feedback format="html"><text>Incorrect. Pharming redirects users to fake websites by poisoning DNS or modifying the hosts file — without requiring the user to click a link in an email.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Typosquatting</text>
+    <feedback format="html"><text>Incorrect. Typosquatting registers misspelled domain names (e.g., gooogle.com) to catch users who mistype URLs — no email link is required.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Watering hole attack</text>
+    <feedback format="html"><text>Incorrect. A watering hole attack compromises websites that the target organization's users are known to visit — it is not email-based.</text></feedback></answer>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-701 TVM-008 Multi-select</text></name>
+  <questiontext format="html"><text><![CDATA[Which TWO of the following are considered indicators of compromise (IoC)? (Select TWO)]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[Indicators of Compromise (IoCs) are forensic evidence of a breach. Examples include: unusual outbound traffic, known malicious IP addresses, unexpected privilege escalation, new admin accounts, large data transfers, and hash values of known malware. Security policies and patch schedules are administrative controls, not IoCs.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>false</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="50" format="html"><text>Unexpected outbound traffic to an unknown foreign IP address at 3 AM</text>
+    <feedback format="html"><text>Correct. Unusual outbound traffic — especially at odd hours or to unknown destinations — is a classic IoC indicating potential data exfiltration or C2 communication.</text></feedback></answer>
+  <answer fraction="50" format="html"><text>A newly created local administrator account that no IT staff can account for</text>
+    <feedback format="html"><text>Correct. Unauthorized privileged accounts are a key IoC suggesting lateral movement or persistence mechanisms installed by an attacker.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>A quarterly security awareness training completion email</text>
+    <feedback format="html"><text>Incorrect. Training completion notifications are administrative activities, not indicators of compromise.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>A scheduled vulnerability scan report</text>
+    <feedback format="html"><text>Incorrect. Scheduled scans are routine security operations, not indicators of compromise.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>A firewall rule change approved through the change management process</text>
+    <feedback format="html"><text>Incorrect. An approved, documented change is normal operations. An unapproved change would be an IoC.</text></feedback></answer>
+</question>
+
+<!-- ============================================================ -->
+<!--  CATEGORY: SY0-701 / 3. Security Architecture              -->
+<!-- ============================================================ -->
+<question type="category">
+  <category><text>$course$/SY0-701/3. Security Architecture</text></category>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-701 SA-001</text></name>
+  <questiontext format="html"><text><![CDATA[A company is designing a network and wants to place web servers accessible to the internet while protecting the internal corporate network. Which architecture BEST achieves this?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[A DMZ (Demilitarized Zone) places public-facing servers (web, email, DNS) between two firewalls: one facing the internet and one protecting the internal network. If the DMZ host is compromised, the internal network still has firewall protection. Screened subnet is another term for DMZ.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>Demilitarized Zone (DMZ) / Screened subnet</text>
+    <feedback format="html"><text>Correct. The DMZ isolates public-facing servers from the internal network, providing an additional layer of protection if those servers are compromised.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Flat network with a single firewall at the perimeter</text>
+    <feedback format="html"><text>Incorrect. A flat network with a single firewall provides no segmentation — if any server is compromised, the entire network is at risk.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Air-gapped network</text>
+    <feedback format="html"><text>Incorrect. An air-gapped network is completely isolated — internet-facing web servers would defeat the purpose of an air gap.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>VLAN for all servers and workstations</text>
+    <feedback format="html"><text>Incorrect. A single VLAN without proper segmentation between internet-facing and internal systems does not provide adequate isolation.</text></feedback></answer>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-701 SA-002</text></name>
+  <questiontext format="html"><text><![CDATA[Which cloud deployment model provides dedicated infrastructure to a single organization, managed either on-premises or by a third party?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[Cloud deployment models: Public (shared infrastructure, owned by provider — AWS, Azure), Private (dedicated to one org, on-prem or hosted), Hybrid (combination of public+private), Community (shared by organizations with similar concerns — government, healthcare). Private cloud offers the most control and isolation.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>Private cloud</text>
+    <feedback format="html"><text>Correct. Private cloud infrastructure is dedicated to a single organization, providing greater control, customization, and isolation than public cloud.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Public cloud</text>
+    <feedback format="html"><text>Incorrect. Public cloud infrastructure is shared among multiple customers — not dedicated to a single organization.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Community cloud</text>
+    <feedback format="html"><text>Incorrect. Community cloud is shared by several organizations with similar requirements (e.g., government agencies), not dedicated to a single one.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Hybrid cloud</text>
+    <feedback format="html"><text>Incorrect. Hybrid cloud combines private and public cloud environments — it is not solely dedicated infrastructure.</text></feedback></answer>
+</question>
+
+<question type="matching">
+  <name><text>SY0-701 SA-003 Matching</text></name>
+  <questiontext format="html"><text><![CDATA[Match each cloud service model with its correct description.]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[IaaS (Infrastructure as a Service) provides virtualized computing resources — you manage the OS up. PaaS (Platform as a Service) provides a development platform — you manage the applications. SaaS (Software as a Service) provides complete applications — the vendor manages everything. FaaS/Serverless is an emerging model for function-level deployments.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <shuffleanswers>true</shuffleanswers>
+  <subquestion format="html"><text>IaaS</text><answer><text>Provides virtualized hardware; customer manages OS and above</text></answer></subquestion>
+  <subquestion format="html"><text>PaaS</text><answer><text>Provides a development platform; customer manages applications and data</text></answer></subquestion>
+  <subquestion format="html"><text>SaaS</text><answer><text>Provides complete software applications; vendor manages everything</text></answer></subquestion>
+  <subquestion format="html"><text>FaaS (Serverless)</text><answer><text>Provides function-level execution; customer only manages code logic</text></answer></subquestion>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-701 SA-004</text></name>
+  <questiontext format="html"><text><![CDATA[A security engineer is implementing network segmentation to reduce the attack surface. Which technology is MOST commonly used to segment a physical network into multiple logical networks?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[VLANs (Virtual Local Area Networks) logically segment a physical network switch. Traffic between VLANs must pass through a router or Layer 3 switch, where access control lists (ACLs) or firewall rules can be applied. VLANs are the primary tool for network micro-segmentation in traditional enterprise environments.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>VLAN (Virtual Local Area Network)</text>
+    <feedback format="html"><text>Correct. VLANs logically divide a physical network, limiting broadcast domains and requiring routing (with ACLs/firewall) between segments.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>VPN (Virtual Private Network)</text>
+    <feedback format="html"><text>Incorrect. VPNs create encrypted tunnels for secure remote access or site-to-site connectivity — they do not segment internal networks.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>NAT (Network Address Translation)</text>
+    <feedback format="html"><text>Incorrect. NAT translates private IP addresses to public ones; it provides some obscurity but is not a segmentation technology.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>DNS (Domain Name System)</text>
+    <feedback format="html"><text>Incorrect. DNS resolves hostnames to IP addresses; it has no role in network segmentation.</text></feedback></answer>
+</question>
+
+<question type="truefalse">
+  <name><text>SY0-701 SA-005</text></name>
+  <questiontext format="html"><text><![CDATA[True or False: In an Infrastructure as a Service (IaaS) model, the cloud provider is responsible for patching the guest operating system.]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[FALSE. In IaaS, the customer is responsible for patching the guest OS, installed applications, data, and configurations. The cloud provider manages the physical hardware, hypervisor, and networking infrastructure. This is the shared responsibility model — a critical Security+ concept.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>1</penalty><hidden>0</hidden>
+  <answer fraction="0"><text>true</text><feedback format="html"><text>Incorrect. In IaaS, the customer is responsible for the guest OS and above. The cloud provider only manages the underlying physical infrastructure and hypervisor.</text></feedback></answer>
+  <answer fraction="100"><text>false</text><feedback format="html"><text>Correct. In IaaS, the customer manages the OS, middleware, applications, and data. This is the shared responsibility model.</text></feedback></answer>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-701 SA-006</text></name>
+  <questiontext format="html"><text><![CDATA[Which of the following BEST describes the purpose of a honeynet?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[A honeynet is a network of honeypots — decoy systems designed to attract and deceive attackers. It allows security teams to study attacker techniques, tools, and procedures (TTPs) without risk to real systems. A honeypot is a single decoy; a honeynet is a full network of decoys.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>A network of decoy systems designed to attract attackers and study their techniques</text>
+    <feedback format="html"><text>Correct. A honeynet lures attackers into interacting with fake systems, allowing defenders to observe TTPs without exposing real production assets.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>A network dedicated to processing honeypot log data from multiple locations</text>
+    <feedback format="html"><text>Incorrect. While log aggregation is part of honeynet management, the primary purpose is deception and threat intelligence gathering.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>A backup network that activates when the primary network goes down</text>
+    <feedback format="html"><text>Incorrect. This describes a failover network or redundant network design — not a honeynet.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>A network segment reserved for new employees during onboarding</text>
+    <feedback format="html"><text>Incorrect. This describes a provisioning or quarantine VLAN — not a honeynet.</text></feedback></answer>
+</question>
+
+<!-- ============================================================ -->
+<!--  CATEGORY: SY0-701 / 4. Security Operations                -->
+<!-- ============================================================ -->
+<question type="category">
+  <category><text>$course$/SY0-701/4. Security Operations</text></category>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-701 SO-001</text></name>
+  <questiontext format="html"><text><![CDATA[A security analyst discovers that an employee's workstation has been communicating with a known command-and-control (C2) server. What should be the FIRST step?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[The first step in incident response is Containment — isolating the affected system to prevent further damage or spread. The NIST incident response lifecycle is: Preparation → Detection/Analysis → Containment → Eradication → Recovery → Post-Incident Review. Containment limits the blast radius before investigation begins.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>Isolate the workstation from the network to contain the threat</text>
+    <feedback format="html"><text>Correct. Containment is the immediate priority. Isolating the host prevents the malware from spreading laterally or exfiltrating more data.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Reimage the workstation immediately to remove the malware</text>
+    <feedback format="html"><text>Incorrect. Reimaging (eradication) before containment may allow the malware to spread. Evidence must also be preserved before erasure.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Interview the employee about their recent activities</text>
+    <feedback format="html"><text>Incorrect. While user interviews are part of the investigation, they are not the immediate first step — containment takes priority to prevent ongoing harm.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>File a report with management and wait for further instructions</text>
+    <feedback format="html"><text>Incorrect. Waiting delays containment and allows the threat actor to continue operating. Immediate technical action is required.</text></feedback></answer>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-701 SO-002</text></name>
+  <questiontext format="html"><text><![CDATA[Which of the following tools provides real-time monitoring of security events across an organization's IT infrastructure by aggregating and correlating logs?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[SIEM (Security Information and Event Management) systems collect and correlate logs from across the organization to detect threats in real-time. Examples include Splunk, IBM QRadar, Microsoft Sentinel. SIEM = SIM (Security Information Management) + SEM (Security Event Management). SOAR adds automated response capabilities.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>SIEM (Security Information and Event Management)</text>
+    <feedback format="html"><text>Correct. SIEM aggregates logs from firewalls, IDS/IPS, endpoints, and applications, then correlates them to detect threats and generate alerts.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>IDS (Intrusion Detection System)</text>
+    <feedback format="html"><text>Incorrect. An IDS monitors network traffic or host activity for suspicious patterns but does not aggregate and correlate logs from across the organization.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>DLP (Data Loss Prevention)</text>
+    <feedback format="html"><text>Incorrect. DLP monitors and prevents unauthorized data transfers — it does not provide broad security event correlation.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>WAF (Web Application Firewall)</text>
+    <feedback format="html"><text>Incorrect. A WAF filters HTTP/HTTPS traffic to web applications — it is a specific protection control, not an enterprise-wide monitoring platform.</text></feedback></answer>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-701 SO-003</text></name>
+  <questiontext format="html"><text><![CDATA[During a penetration test, the tester has no prior knowledge of the target environment. Which type of penetration test is this?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[Pen test types: Black box = no prior knowledge (simulates external attacker), White box = full knowledge (source code, network diagrams — most thorough), Gray box = partial knowledge. Black box tests are most realistic for simulating a real attacker but may miss some vulnerabilities due to time constraints.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>Black box penetration test</text>
+    <feedback format="html"><text>Correct. Black box testing simulates an external attacker with no inside knowledge. The tester must discover all information through reconnaissance.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>White box penetration test</text>
+    <feedback format="html"><text>Incorrect. White box testing provides the tester with full knowledge of the environment — source code, architecture, credentials — for the most thorough assessment.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Gray box penetration test</text>
+    <feedback format="html"><text>Incorrect. Gray box provides partial knowledge, simulating an insider threat or authenticated user scenario.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Red team exercise</text>
+    <feedback format="html"><text>Partially correct context, but a red team exercise is a broader adversarial simulation, not specifically defined by the knowledge level of the tester.</text></feedback></answer>
+</question>
+
+<question type="truefalse">
+  <name><text>SY0-701 SO-004</text></name>
+  <questiontext format="html"><text><![CDATA[True or False: An Intrusion Prevention System (IPS) can actively block malicious traffic, whereas an Intrusion Detection System (IDS) can only alert on suspicious activity.]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[TRUE. IDS = passive — detects and alerts. IPS = active — detects AND blocks/prevents. An IPS is placed inline (in the traffic path) so it can drop packets. An IDS typically receives a copy of traffic (via SPAN port or TAP). NIDS = Network-based; HIDS = Host-based.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>1</penalty><hidden>0</hidden>
+  <answer fraction="100"><text>true</text><feedback format="html"><text>Correct. IPS is active and can block traffic inline. IDS is passive and only monitors and alerts — it cannot prevent the attack by itself.</text></feedback></answer>
+  <answer fraction="0"><text>false</text><feedback format="html"><text>Incorrect. This is true — IPS blocks (active/inline), IDS only alerts (passive/out-of-band).</text></feedback></answer>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-701 SO-005</text></name>
+  <questiontext format="html"><text><![CDATA[A forensic analyst is investigating a compromised server. Which principle is MOST important to preserve the integrity of digital evidence?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[Chain of custody documents who handled evidence, when, and how — critical for legal proceedings. Before any analysis, a forensic image (write-blocked bit-for-bit copy) must be made of the original media. All analysis is done on the copy. Hashing (MD5/SHA-256) of evidence before and after verifies it has not been altered.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>Maintaining chain of custody and creating a verified forensic image before analysis</text>
+    <feedback format="html"><text>Correct. Chain of custody ensures evidence admissibility in court. A forensic image with hash verification ensures the original evidence is unaltered.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Immediately analyzing the live system before powering it down</text>
+    <feedback format="html"><text>Incorrect. While volatile memory capture has value, modifying the live system risks contaminating evidence. Proper imaging and chain of custody come first.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Running antivirus software on the compromised server to remove malware</text>
+    <feedback format="html"><text>Incorrect. Running AV destroys forensic evidence by removing or modifying files. Evidence must be preserved before any remediation.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Rebooting the server to check if the malware persists after restart</text>
+    <feedback format="html"><text>Incorrect. Rebooting destroys volatile memory (RAM) contents which may contain critical forensic artifacts like encryption keys or running processes.</text></feedback></answer>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-701 SO-006</text></name>
+  <questiontext format="html"><text><![CDATA[Which of the following BEST describes the purpose of a Security Orchestration, Automation, and Response (SOAR) platform?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[SOAR platforms automate repetitive security tasks (like enriching alerts, blocking IPs, isolating hosts) using playbooks. They integrate with SIEM and other tools to reduce analyst workload and mean time to respond (MTTR). SIEM detects → SOAR responds. Key benefit: speed and consistency of incident response.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>Automate security response actions and orchestrate workflows across security tools</text>
+    <feedback format="html"><text>Correct. SOAR reduces analyst toil by automating playbooks — e.g., when a phishing alert fires, automatically quarantine the email, block the sender, and notify the user.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Provide a centralized dashboard for monitoring firewall rules</text>
+    <feedback format="html"><text>Incorrect. Firewall management dashboards exist separately. SOAR is focused on automated incident response workflows across multiple tools.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Encrypt sensitive data stored in cloud environments</text>
+    <feedback format="html"><text>Incorrect. Cloud encryption is handled by key management systems and cloud security services — not SOAR platforms.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Perform vulnerability scanning and patch management</text>
+    <feedback format="html"><text>Incorrect. Vulnerability scanners (Nessus, Qualys) and patch management tools serve this purpose. SOAR focuses on incident response automation.</text></feedback></answer>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-701 SO-007</text></name>
+  <questiontext format="html"><text><![CDATA[A company uses mandatory vacation policies for its financial employees. Which security purpose does this PRIMARILY serve?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[Mandatory vacation (and job rotation) forces employees to hand off duties to a colleague. This: 1) Detects fraud or unauthorized activity that requires the original employee's presence to conceal, 2) Reduces insider threat risk, 3) Ensures no single person is indispensable (continuity). Common in banking and financial sectors.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>Detecting insider fraud by requiring another person to cover duties</text>
+    <feedback format="html"><text>Correct. Mandatory vacation forces coverage by another employee, which can expose fraudulent or unauthorized activities that the original employee was concealing.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Preventing employees from becoming burned out</text>
+    <feedback format="html"><text>Incorrect. While a beneficial side effect, the security purpose of mandatory vacation is fraud detection and insider threat mitigation, not employee wellness.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Ensuring compliance with labor law vacation requirements</text>
+    <feedback format="html"><text>Incorrect. Labor law compliance is a legal concern. From a security perspective, mandatory vacation is an insider threat control.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Reducing the number of active user accounts at any one time</text>
+    <feedback format="html"><text>Incorrect. Mandatory vacation does not reduce active account counts — accounts remain active but are used by backup staff.</text></feedback></answer>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-701 SO-008</text></name>
+  <questiontext format="html"><text><![CDATA[Which of the following BEST describes the difference between vulnerability scanning and penetration testing?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[Vulnerability scanning is automated, non-exploitative, and identifies potential weaknesses. Penetration testing is manual/semi-manual, actively exploits vulnerabilities to confirm their impact, and requires explicit authorization. Pen testing provides deeper insight but takes more time and resources. Both are complementary.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>Vulnerability scanning identifies potential weaknesses; penetration testing actively exploits them to confirm impact</text>
+    <feedback format="html"><text>Correct. Scanning finds potential vulnerabilities without exploiting them. Pen testing validates them through actual exploitation to determine real-world risk.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Vulnerability scanning requires manual effort; penetration testing is fully automated</text>
+    <feedback format="html"><text>Incorrect. This is backwards. Vulnerability scanning is typically automated; penetration testing requires skilled human testers.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Penetration testing identifies vulnerabilities; vulnerability scanning exploits them</text>
+    <feedback format="html"><text>Incorrect. This reverses the definitions. Scanning identifies, pen testing exploits.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Both are the same process with different names</text>
+    <feedback format="html"><text>Incorrect. They are distinct processes with different methodologies, goals, and authorization requirements.</text></feedback></answer>
+</question>
+
+<!-- ============================================================ -->
+<!--  CATEGORY: SY0-701 / 5. Security Program Management        -->
+<!-- ============================================================ -->
+<question type="category">
+  <category><text>$course$/SY0-701/5. Security Program Management and Oversight</text></category>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-701 SPMO-001</text></name>
+  <questiontext format="html"><text><![CDATA[A company processes credit card transactions. Which compliance framework are they MOST likely required to adhere to?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[PCI DSS (Payment Card Industry Data Security Standard) is a mandatory security standard for any organization that stores, processes, or transmits cardholder data. It is maintained by the PCI Security Standards Council. Non-compliance can result in fines and loss of card processing privileges.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>PCI DSS (Payment Card Industry Data Security Standard)</text>
+    <feedback format="html"><text>Correct. PCI DSS applies to all entities that store, process, or transmit credit/debit card data. It mandates specific security controls including encryption, access controls, and regular testing.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>HIPAA (Health Insurance Portability and Accountability Act)</text>
+    <feedback format="html"><text>Incorrect. HIPAA applies to healthcare entities protecting Protected Health Information (PHI), not payment card data.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>SOX (Sarbanes-Oxley Act)</text>
+    <feedback format="html"><text>Incorrect. SOX applies to publicly traded companies for financial reporting accuracy and IT general controls, not specifically payment card security.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>FERPA (Family Educational Rights and Privacy Act)</text>
+    <feedback format="html"><text>Incorrect. FERPA protects student educational records in the United States — unrelated to payment card processing.</text></feedback></answer>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-701 SPMO-002</text></name>
+  <questiontext format="html"><text><![CDATA[An organization identifies a risk but determines the cost of mitigation exceeds the potential loss. What risk response strategy is this?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[Risk response strategies: Accept (acknowledge risk, no action — cost > benefit), Avoid (eliminate the risk source), Transfer (insurance, contracts), Mitigate (reduce probability or impact). Risk acceptance is documented in a risk register and signed off by appropriate management.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>Risk acceptance</text>
+    <feedback format="html"><text>Correct. When the cost of control exceeds the potential loss, risk acceptance (with documentation) is the appropriate response. This is a business decision, not negligence.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Risk avoidance</text>
+    <feedback format="html"><text>Incorrect. Risk avoidance eliminates the risk by stopping the activity that creates it — e.g., not offering a service. This is not described here.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Risk transference</text>
+    <feedback format="html"><text>Incorrect. Risk transference shifts financial consequences to a third party (e.g., cyber insurance). The scenario describes accepting the risk, not transferring it.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Risk mitigation</text>
+    <feedback format="html"><text>Incorrect. Mitigation reduces the risk's probability or impact through controls. The scenario states mitigation is too costly, so it is not chosen.</text></feedback></answer>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-701 SPMO-003</text></name>
+  <questiontext format="html"><text><![CDATA[Which of the following BEST describes the difference between a security policy and a security procedure?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[Hierarchy: Policy (what and why — high level, management directive), Standard (specific mandatory requirements that support the policy), Guidelines (recommendations, not mandatory), Procedures (step-by-step how-to instructions). Policies are broad; procedures are specific and operational.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>A policy defines what must be done; a procedure describes the step-by-step process for doing it</text>
+    <feedback format="html"><text>Correct. Policy is strategic (what/why), procedure is tactical (how). Example: "All data must be encrypted" (policy) vs. "To encrypt a USB drive, follow these 12 steps..." (procedure).</text></feedback></answer>
+  <answer fraction="0" format="html"><text>A policy is optional guidance; a procedure is mandatory</text>
+    <feedback format="html"><text>Incorrect. Policies ARE mandatory; guidelines are optional recommendations. Procedures are also mandatory operational instructions.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>A policy is technical; a procedure is managerial</text>
+    <feedback format="html"><text>Incorrect. Policies are managerial/strategic, while procedures are often technical and operational.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>They are the same document with different names</text>
+    <feedback format="html"><text>Incorrect. They are distinct documents with different levels of specificity, audiences, and purposes in the security governance hierarchy.</text></feedback></answer>
+</question>
+
+<question type="matching">
+  <name><text>SY0-701 SPMO-004 Matching</text></name>
+  <questiontext format="html"><text><![CDATA[Match each compliance regulation to the sector it primarily governs.]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[HIPAA = US healthcare (PHI), PCI DSS = payment card industry, GDPR = EU personal data (any sector), SOX = US publicly traded companies (financial reporting), GLBA = US financial institutions (consumer financial data), FERPA = US student educational records.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <shuffleanswers>true</shuffleanswers>
+  <subquestion format="html"><text>HIPAA</text><answer><text>Healthcare (Protected Health Information)</text></answer></subquestion>
+  <subquestion format="html"><text>GDPR</text><answer><text>EU personal data privacy (any sector)</text></answer></subquestion>
+  <subquestion format="html"><text>SOX</text><answer><text>Publicly traded companies (financial reporting)</text></answer></subquestion>
+  <subquestion format="html"><text>PCI DSS</text><answer><text>Payment card processing</text></answer></subquestion>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-701 SPMO-005</text></name>
+  <questiontext format="html"><text><![CDATA[Which type of agreement defines the minimum acceptable level of service between a provider and a customer, including uptime guarantees and response times?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[SLA (Service Level Agreement) defines measurable service commitments: uptime %, response times, support availability. MOU = Memorandum of Understanding (non-binding intent). MOA = Memorandum of Agreement (binding). BPA = Business Partnership Agreement. ISA = Interconnection Security Agreement (for connected systems between organizations).]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>Service Level Agreement (SLA)</text>
+    <feedback format="html"><text>Correct. An SLA is a formal contract defining measurable service performance requirements, including uptime guarantees, response times, and penalties for non-compliance.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Memorandum of Understanding (MOU)</text>
+    <feedback format="html"><text>Incorrect. An MOU is a non-binding document expressing intent to work together — it does not define specific service performance requirements.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Non-Disclosure Agreement (NDA)</text>
+    <feedback format="html"><text>Incorrect. An NDA protects confidential information from being disclosed — it does not address service performance levels.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Interconnection Security Agreement (ISA)</text>
+    <feedback format="html"><text>Incorrect. An ISA governs the security requirements for connecting two organizations' networks — not service performance metrics.</text></feedback></answer>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-701 SPMO-006</text></name>
+  <questiontext format="html"><text><![CDATA[A healthcare organization must ensure that patient records remain available even after a disaster. Which plan specifically addresses this?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[BCP = Business Continuity Plan (keeping the business running during disruption), DRP = Disaster Recovery Plan (restoring IT systems after a disaster), IRP = Incident Response Plan (responding to security incidents), COOP = Continuity of Operations Plan (government term). DRP focuses specifically on IT/data recovery.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>Disaster Recovery Plan (DRP)</text>
+    <feedback format="html"><text>Correct. The DRP specifically addresses restoring IT systems, applications, and data after a disaster — including patient record availability in healthcare.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Incident Response Plan (IRP)</text>
+    <feedback format="html"><text>Incorrect. The IRP addresses security incidents (breaches, malware). A disaster recovery scenario is broader than a security incident.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Change Management Plan</text>
+    <feedback format="html"><text>Incorrect. Change management governs the process for making controlled changes to IT systems — it does not address disaster recovery.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Communication Plan</text>
+    <feedback format="html"><text>Incorrect. A communication plan defines how information is shared during an incident or crisis — it supports the DRP/BCP but does not address data availability itself.</text></feedback></answer>
+</question>
+
+<!-- ============================================================ -->
+<!--  CATEGORY: SY0-601 / 1. Threats Attacks and Vulnerabilities -->
+<!-- ============================================================ -->
+<question type="category">
+  <category><text>$course$/SY0-601/1. Threats Attacks and Vulnerabilities</text></category>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-601 TAV-001</text></name>
+  <questiontext format="html"><text><![CDATA[An attacker exploits a buffer overflow vulnerability to gain root access on a Linux system. Which category of attack technique is this?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[Buffer overflow attacks write data beyond allocated memory buffers, overwriting adjacent memory including return addresses. This can redirect execution to attacker-controlled shellcode. It is a code injection / privilege escalation technique. Modern mitigations include ASLR (Address Space Layout Randomization), DEP/NX (Data Execution Prevention), and stack canaries.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>Buffer overflow / Code injection attack</text>
+    <feedback format="html"><text>Correct. Buffer overflows overwrite memory beyond allocated buffers, allowing attackers to redirect code execution and potentially gain elevated privileges.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Cross-site scripting (XSS)</text>
+    <feedback format="html"><text>Incorrect. XSS injects malicious scripts into web pages viewed by other users — it is a web application attack, not a binary exploitation technique.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>SQL injection</text>
+    <feedback format="html"><text>Incorrect. SQL injection manipulates database queries through unsanitized input — it does not involve memory buffer manipulation.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Cross-site request forgery (CSRF)</text>
+    <feedback format="html"><text>Incorrect. CSRF tricks authenticated users into making unintended web requests — it is a web application attack unrelated to memory exploitation.</text></feedback></answer>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-601 TAV-002</text></name>
+  <questiontext format="html"><text><![CDATA[A malicious actor sends millions of login attempts using a list of previously breached username/password combinations. Which attack technique is this?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[Credential stuffing uses leaked credential databases from previous breaches (available on the dark web) to attempt login on other services — exploiting password reuse. It differs from brute force (trying random combinations) and password spraying (one password against many accounts). Defense: MFA, breach monitoring, account lockout.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>Credential stuffing</text>
+    <feedback format="html"><text>Correct. Credential stuffing uses previously breached username/password pairs. It is effective because users reuse passwords across multiple services.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Brute force attack</text>
+    <feedback format="html"><text>Incorrect. Brute force tries all possible character combinations — it does not use a pre-existing list of breached credentials.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Password spraying</text>
+    <feedback format="html"><text>Incorrect. Password spraying tries one common password (e.g., "Password123!") against many different accounts to avoid lockout — not using a list of specific username/password pairs.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Dictionary attack</text>
+    <feedback format="html"><text>Incorrect. A dictionary attack uses a list of common words and phrases to guess passwords — not actual stolen credential pairs from breaches.</text></feedback></answer>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-601 TAV-003</text></name>
+  <questiontext format="html"><text><![CDATA[An attacker injects malicious SQL code into a web form input field to extract the entire user database. Which vulnerability is being exploited?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[SQL injection (SQLi) occurs when user input is not properly sanitized before being included in SQL queries. The attacker can manipulate the query to return all data, bypass authentication, or execute system commands. Prevention: parameterized queries/prepared statements, stored procedures, input validation, WAF.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>SQL Injection (SQLi)</text>
+    <feedback format="html"><text>Correct. SQL injection exploits insufficient input validation. Injecting SQL syntax into form fields can manipulate database queries to expose or modify data.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Cross-site scripting (XSS)</text>
+    <feedback format="html"><text>Incorrect. XSS injects client-side scripts (JavaScript) that execute in other users' browsers — it does not target database queries.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Directory traversal</text>
+    <feedback format="html"><text>Incorrect. Directory traversal allows attackers to access files outside the web root using "../" sequences — it targets the file system, not the database.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>XML injection</text>
+    <feedback format="html"><text>Incorrect. XML injection manipulates XML data processing. The scenario specifically describes SQL database extraction, indicating SQL injection.</text></feedback></answer>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-601 TAV-004</text></name>
+  <questiontext format="html"><text><![CDATA[Which of the following is an example of a man-in-the-middle (MitM) attack?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[MitM attacks intercept communications between two parties who believe they are communicating directly. ARP poisoning is a Layer 2 MitM technique — the attacker sends fake ARP replies associating their MAC address with a legitimate IP address, redirecting traffic through their machine. SSL stripping downgrades HTTPS to HTTP in a MitM context.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>ARP poisoning to intercept traffic between two network hosts</text>
+    <feedback format="html"><text>Correct. ARP poisoning is a classic MitM technique at Layer 2. The attacker poisons ARP caches to redirect traffic through their system, enabling eavesdropping or modification.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Sending a phishing email to steal a user's password</text>
+    <feedback format="html"><text>Incorrect. Phishing is a social engineering attack, not a MitM attack — it does not intercept communications in transit.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Exploiting a buffer overflow to gain root access</text>
+    <feedback format="html"><text>Incorrect. Buffer overflow is code exploitation — it does not involve intercepting communications between two parties.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Performing a DDoS attack using a botnet</text>
+    <feedback format="html"><text>Incorrect. DDoS is an availability attack — it floods a target, it does not intercept communications.</text></feedback></answer>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-601 TAV-005</text></name>
+  <questiontext format="html"><text><![CDATA[A threat actor compromises a widely-used open source library and inserts malicious code that is distributed to thousands of applications. What type of attack is this BEST classified as?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[This is a supply chain attack — specifically a software supply chain attack targeting a dependency/library. Real-world examples: SolarWinds (build system), event-stream npm package, XZ Utils backdoor (2024). Organizations should implement software composition analysis (SCA) tools to scan for vulnerable or malicious dependencies.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>Supply chain attack</text>
+    <feedback format="html"><text>Correct. Inserting malicious code into a trusted open-source library that is then distributed to downstream users is a textbook software supply chain attack.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Watering hole attack</text>
+    <feedback format="html"><text>Incorrect. A watering hole attack compromises a website that targets are known to visit — not a software library in the supply chain.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Trojan horse</text>
+    <feedback format="html"><text>Partially related (the malicious code is hidden in legitimate software) but the Supply Chain classification is more accurate and specific for this exam context.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Logic bomb</text>
+    <feedback format="html"><text>Incorrect. A logic bomb is code that executes when specific conditions are met — it could be a component of a supply chain attack, but the overall attack type is supply chain.</text></feedback></answer>
+</question>
+
+<question type="truefalse">
+  <name><text>SY0-601 TAV-006</text></name>
+  <questiontext format="html"><text><![CDATA[True or False: Ransomware that encrypts files and demands payment is considered a form of malware.]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[TRUE. Ransomware is a category of malware. Malware includes: viruses (self-replicating, requires host file), worms (self-replicating, no host needed), trojans (disguised as legitimate software), ransomware (encrypts files for ransom), spyware (steals data), adware (displays unwanted ads), rootkits (hides malware presence).]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>1</penalty><hidden>0</hidden>
+  <answer fraction="100"><text>true</text><feedback format="html"><text>Correct. Ransomware is a type of malware that encrypts victim's files and demands payment (usually cryptocurrency) for decryption keys.</text></feedback></answer>
+  <answer fraction="0"><text>false</text><feedback format="html"><text>Incorrect. Ransomware is indeed a form of malware — specifically a type of extortionware that denies access to data until a ransom is paid.</text></feedback></answer>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-601 TAV-007</text></name>
+  <questiontext format="html"><text><![CDATA[Which type of social engineering attack involves an attacker creating a fabricated scenario (e.g., pretending to be an IT auditor) to manipulate an employee into revealing information?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[Pretexting involves creating a fabricated identity or scenario to manipulate a victim. The attacker researches the target to make the pretext believable. It is different from phishing (email-based), vishing (phone-based), and impersonation (in person). Pretexting is the foundation of most social engineering attacks.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>Pretexting</text>
+    <feedback format="html"><text>Correct. Pretexting is the act of creating a fabricated scenario (the pretext) to manipulate someone into providing information or access.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Baiting</text>
+    <feedback format="html"><text>Incorrect. Baiting uses physical media (USB drives) or false promises of something desirable to lure victims — it does not involve creating a fabricated identity.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Quid pro quo</text>
+    <feedback format="html"><text>Incorrect. Quid pro quo involves offering something (e.g., free tech support) in exchange for information — it is a reciprocity-based attack.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Tailgating</text>
+    <feedback format="html"><text>Incorrect. Tailgating is a physical security attack — following an authorized person through a secured door without proper authentication.</text></feedback></answer>
+</question>
+
+<!-- ============================================================ -->
+<!--  CATEGORY: SY0-601 / 2. Architecture and Design            -->
+<!-- ============================================================ -->
+<question type="category">
+  <category><text>$course$/SY0-601/2. Architecture and Design</text></category>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-601 AD-001</text></name>
+  <questiontext format="html"><text><![CDATA[Which of the following is an example of security by obscurity, and why is it NOT considered a strong security control?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[Security by obscurity relies on hiding implementation details (e.g., changing the default SSH port from 22 to 2222) as the primary security mechanism. It fails because determined attackers use port scanners (Nmap) to find services regardless of port. It should only supplement — never replace — strong cryptographic and access controls.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>Changing the SSH port from 22 to a non-standard port as the sole security measure — because port scanning reveals the service regardless</text>
+    <feedback format="html"><text>Correct. Changing a default port provides minor noise reduction but not real security. A port scanner (Nmap) will find the SSH service on any port. It should supplement, not replace, strong authentication.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Encrypting all data with AES-256 — because the algorithm is publicly known</text>
+    <feedback format="html"><text>Incorrect. AES-256 is strong cryptography, not security by obscurity. Kerckhoffs's principle states that a cryptosystem should be secure even if everything about the system is public knowledge — the key must remain secret, not the algorithm.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Implementing multi-factor authentication — because it requires multiple verification steps</text>
+    <feedback format="html"><text>Incorrect. MFA is a strong, recognized security control — not security by obscurity.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Using network segmentation to isolate sensitive systems</text>
+    <feedback format="html"><text>Incorrect. Network segmentation is a legitimate architectural security control, not security by obscurity.</text></feedback></answer>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-601 AD-002</text></name>
+  <questiontext format="html"><text><![CDATA[A development team wants to implement security testing that automatically scans source code for vulnerabilities without executing the application. Which type of testing is this?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[SAST (Static Application Security Testing) analyzes source code, bytecode, or binary code without executing it — "white box" testing. DAST (Dynamic Application Security Testing) tests the running application from outside ("black box"). IAST combines both. SCA (Software Composition Analysis) checks for vulnerable third-party libraries.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>SAST (Static Application Security Testing)</text>
+    <feedback format="html"><text>Correct. SAST analyzes source code statically without running the application. It finds vulnerabilities early in the SDLC (Shift Left security).</text></feedback></answer>
+  <answer fraction="0" format="html"><text>DAST (Dynamic Application Security Testing)</text>
+    <feedback format="html"><text>Incorrect. DAST tests the running application by sending malicious inputs and observing responses — it requires execution of the application.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Fuzzing</text>
+    <feedback format="html"><text>Incorrect. Fuzzing sends random or malformed inputs to a running application to find crash conditions — it requires application execution.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Regression testing</text>
+    <feedback format="html"><text>Incorrect. Regression testing verifies that new code changes don't break existing functionality — it is not specifically a security testing technique.</text></feedback></answer>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-601 AD-003</text></name>
+  <questiontext format="html"><text><![CDATA[Which of the following BEST describes the concept of "privacy by design"?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[Privacy by Design (PbD), coined by Ann Cavoukian, means integrating privacy protections into the design of systems and processes from the beginning — not as an afterthought. It is a foundational principle of GDPR. The 7 principles include: proactive not reactive, privacy as default, embedded into design, full functionality, end-to-end security, visibility and transparency, respect for user privacy.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>Embedding privacy protections into systems and processes from the initial design phase</text>
+    <feedback format="html"><text>Correct. Privacy by Design ensures privacy is built in from the start rather than added later. It is proactive, not reactive, and is a core GDPR principle.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Adding privacy features to existing systems after a data breach</text>
+    <feedback format="html"><text>Incorrect. This is the reactive approach that Privacy by Design specifically aims to avoid. PbD is proactive.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Anonymizing all user data before storing it in any database</text>
+    <feedback format="html"><text>Incorrect. Anonymization is a privacy technique but does not itself represent the holistic concept of Privacy by Design, which encompasses the entire system design philosophy.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Requiring users to opt out of data collection rather than opt in</text>
+    <feedback format="html"><text>Incorrect. Privacy by Design actually favors opt-in and privacy as the default setting — opt-out is the less privacy-protective approach.</text></feedback></answer>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-601 AD-004</text></name>
+  <questiontext format="html"><text><![CDATA[An organization wants to ensure that no single employee can complete a critical financial transaction without the involvement of another employee. Which control implements this?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[Separation of duties (SoD) prevents any single individual from having enough access to commit and conceal fraud. For financial transactions, two-person integrity (also called dual control) requires two authorized individuals. SoD is both a preventive and detective control. Job rotation is a related control.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>Separation of duties</text>
+    <feedback format="html"><text>Correct. Separation of duties divides a process among multiple people so no single individual can complete a sensitive transaction alone, reducing fraud and error risk.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Least privilege</text>
+    <feedback format="html"><text>Incorrect. Least privilege limits the access of individual users. It does not require two people to approve a transaction.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Role-based access control (RBAC)</text>
+    <feedback format="html"><text>Incorrect. RBAC assigns permissions based on roles — it does not inherently require dual approval for transactions.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Time-of-day restrictions</text>
+    <feedback format="html"><text>Incorrect. Time-of-day restrictions limit when access is allowed — not whether two people must participate in a transaction.</text></feedback></answer>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-601 AD-005</text></name>
+  <questiontext format="html"><text><![CDATA[Which SDLC model integrates security activities at every phase of development, from design through deployment?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[DevSecOps (or Secure SDLC / Security by Design) integrates security throughout the software development lifecycle — threat modeling in design, SAST during coding, DAST during testing, security review during deployment. The traditional waterfall model adds security as the last phase (security as an afterthought). "Shift left" means moving security earlier in the process.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>Secure SDLC / DevSecOps</text>
+    <feedback format="html"><text>Correct. DevSecOps (Development, Security, Operations) embeds security at every phase — from requirements and design through coding, testing, and deployment. Security is everyone's responsibility.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Waterfall model with security review at final testing</text>
+    <feedback format="html"><text>Incorrect. Traditional waterfall relegates security to late-stage testing — a reactive approach. DevSecOps "shifts left" — addressing security from the earliest phases.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Agile sprint model with annual security assessments</text>
+    <feedback format="html"><text>Incorrect. Annual security assessments are insufficient for continuously deploying software. Security must be continuous and integrated into each sprint.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Rapid application development (RAD) with post-deployment pen testing</text>
+    <feedback format="html"><text>Incorrect. Post-deployment pen testing finds issues after the product is live — too late for early architecture flaws. Secure SDLC addresses security from the start.</text></feedback></answer>
+</question>
+
+<!-- ============================================================ -->
+<!--  CATEGORY: SY0-601 / 3. Implementation                     -->
+<!-- ============================================================ -->
+<question type="category">
+  <category><text>$course$/SY0-601/3. Implementation</text></category>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-601 IMP-001</text></name>
+  <questiontext format="html"><text><![CDATA[A network administrator wants to prevent unauthorized devices from connecting to the corporate wireless network, even if they have the correct WPA2 passphrase. Which technology BEST achieves this?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[802.1X with EAP (Extensible Authentication Protocol) provides port-based Network Access Control (NAC). Each device/user must authenticate via a RADIUS server before gaining network access. This requires a certificate or credential — just knowing the PSK is not enough. WPA2-Enterprise uses 802.1X. WPA2-Personal uses PSK (shared passphrase).]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>802.1X port-based authentication with RADIUS</text>
+    <feedback format="html"><text>Correct. 802.1X/RADIUS requires each device to individually authenticate, not just know a shared passphrase. Unauthorized devices without valid credentials are denied access.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>MAC address filtering</text>
+    <feedback format="html"><text>Incorrect. MAC address filtering can be bypassed by MAC spoofing — an attacker can clone an authorized device's MAC address using publicly available tools.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Disabling SSID broadcast</text>
+    <feedback format="html"><text>Incorrect. Hiding the SSID is security by obscurity — it can be discovered by any tool that captures 802.11 probe responses or beacons.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Using WEP instead of WPA2</text>
+    <feedback format="html"><text>Incorrect. WEP is severely deprecated and can be cracked in minutes. It provides far less security than WPA2 and would not prevent unauthorized access.</text></feedback></answer>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-601 IMP-002</text></name>
+  <questiontext format="html"><text><![CDATA[Which of the following protocols provides encrypted, authenticated management access to network devices and is a replacement for Telnet?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[SSH (Secure Shell) uses TCP port 22 and provides encrypted, authenticated remote shell access. Telnet (port 23) sends all data including credentials in plaintext. HTTPS (443) secures web traffic. SFTP is secure file transfer over SSH. SNMPv3 provides authenticated/encrypted SNMP management.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>SSH (Secure Shell) on port 22</text>
+    <feedback format="html"><text>Correct. SSH provides encrypted, authenticated remote access to network devices, replacing the plaintext Telnet protocol (port 23).</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Telnet on port 23</text>
+    <feedback format="html"><text>Incorrect. Telnet transmits all data including passwords in plaintext — a significant security risk. SSH was designed to replace it.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>FTP on port 21</text>
+    <feedback format="html"><text>Incorrect. FTP transmits data in cleartext. SFTP (SSH File Transfer Protocol) or FTPS (FTP over TLS) should be used for secure file transfers.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>HTTP on port 80</text>
+    <feedback format="html"><text>Incorrect. HTTP is cleartext web traffic. HTTPS (port 443) provides encrypted web management. HTTP is not used for device management shells.</text></feedback></answer>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-601 IMP-003</text></name>
+  <questiontext format="html"><text><![CDATA[A PKI administrator needs to revoke a certificate before its expiration date due to a suspected key compromise. Which TWO mechanisms can be used to communicate certificate revocation status? (Select TWO)]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[Certificate revocation: CRL (Certificate Revocation List) is a periodically published list of revoked certificates. OCSP (Online Certificate Status Protocol) provides real-time revocation checking for individual certificates. OCSP Stapling is an optimization where the server caches the OCSP response and includes it in the TLS handshake. OCSP is preferred over CRL for real-time checks.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>false</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="50" format="html"><text>Certificate Revocation List (CRL)</text>
+    <feedback format="html"><text>Correct. CRL is a periodically published list signed by the CA containing all revoked certificate serial numbers. Clients download and check it against the presented certificate.</text></feedback></answer>
+  <answer fraction="50" format="html"><text>Online Certificate Status Protocol (OCSP)</text>
+    <feedback format="html"><text>Correct. OCSP allows real-time querying of a certificate's revocation status from the CA's OCSP responder. Faster and more current than CRL for individual certificate checks.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Certificate Signing Request (CSR)</text>
+    <feedback format="html"><text>Incorrect. A CSR is submitted to a CA when requesting a new certificate — it is not a revocation mechanism.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Certificate Transparency Log (CT Log)</text>
+    <feedback format="html"><text>Incorrect. CT Logs are public append-only records of issued certificates (for detecting misissuance) — not revocation communication mechanisms.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Extended Validation (EV) process</text>
+    <feedback format="html"><text>Incorrect. EV is a certificate validation level indicating the CA has done extensive identity verification — it is not a revocation mechanism.</text></feedback></answer>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-601 IMP-004</text></name>
+  <questiontext format="html"><text><![CDATA[An organization wants to implement full disk encryption on all laptops to protect data if devices are stolen. Which technology is MOST commonly used for this on Windows systems?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[BitLocker is Microsoft's built-in full disk encryption tool for Windows, using AES-128 or AES-256. It integrates with TPM (Trusted Platform Module) to store the encryption key securely. FileVault is macOS's FDE solution. VeraCrypt is an open-source option for multiple platforms. BitLocker requires Windows Pro/Enterprise.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>BitLocker</text>
+    <feedback format="html"><text>Correct. BitLocker is Microsoft's built-in full disk encryption. With TPM, the drive can only decrypt on the authorized hardware, protecting data if the drive or laptop is stolen.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>FileVault</text>
+    <feedback format="html"><text>Incorrect. FileVault is Apple's full disk encryption solution for macOS — not Windows.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>EFS (Encrypting File System)</text>
+    <feedback format="html"><text>Incorrect. EFS encrypts individual files and folders, not the entire disk. It is a file-level encryption feature — not full disk encryption.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>LUKS (Linux Unified Key Setup)</text>
+    <feedback format="html"><text>Incorrect. LUKS is the standard full disk encryption tool for Linux systems, not Windows.</text></feedback></answer>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-601 IMP-005</text></name>
+  <questiontext format="html"><text><![CDATA[Which firewall type examines packets and maintains state information about active connections, allowing return traffic for established sessions?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[Stateful inspection (stateful packet filtering) tracks active connections in a state table. When an outbound connection is established, the firewall remembers the session and allows the return traffic automatically. Stateless firewalls examine each packet independently using ACLs. NGFWs add application awareness and deep packet inspection on top of stateful inspection.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>Stateful inspection firewall</text>
+    <feedback format="html"><text>Correct. A stateful firewall maintains a connection state table, allowing return traffic for established sessions while blocking unsolicited inbound connections.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Packet filtering (stateless) firewall</text>
+    <feedback format="html"><text>Incorrect. A stateless/packet filter firewall examines each packet independently against ACL rules without tracking connection state. It cannot distinguish return traffic from new connections.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Application-layer (proxy) firewall</text>
+    <feedback format="html"><text>Incorrect. An application-layer proxy intercepts and inspects application data, acting as an intermediary. While it understands application state, the distinguishing characteristic described is stateful connection tracking, not application proxying.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Circuit-level gateway</text>
+    <feedback format="html"><text>Incorrect. Circuit-level gateways operate at the session layer, validating TCP handshakes, but do not inspect packet contents above the session level.</text></feedback></answer>
+</question>
+
+<question type="matching">
+  <name><text>SY0-601 IMP-006 Matching Ports</text></name>
+  <questiontext format="html"><text><![CDATA[Match each protocol to its default port number.]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[Critical port numbers for Security+: SSH=22, SMTP=25, DNS=53, HTTP=80, HTTPS=443, LDAP=389, LDAPS=636, RDP=3389, SMB=445, FTP=21, FTPS=990, Telnet=23, SNMP=161, Kerberos=88, NTP=123.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <shuffleanswers>true</shuffleanswers>
+  <subquestion format="html"><text>HTTPS</text><answer><text>443</text></answer></subquestion>
+  <subquestion format="html"><text>SSH</text><answer><text>22</text></answer></subquestion>
+  <subquestion format="html"><text>RDP (Remote Desktop Protocol)</text><answer><text>3389</text></answer></subquestion>
+  <subquestion format="html"><text>DNS</text><answer><text>53</text></answer></subquestion>
+  <subquestion format="html"><text>SMTP</text><answer><text>25</text></answer></subquestion>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-601 IMP-007</text></name>
+  <questiontext format="html"><text><![CDATA[Which of the following BEST describes the purpose of a RADIUS server in a network environment?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[RADIUS (Remote Authentication Dial-In User Service) provides centralized Authentication, Authorization, and Accounting (AAA) for network access. It works with 802.1X for NAC. TACACS+ is Cisco's similar protocol with separate A, A, A phases and TCP. RADIUS uses UDP. Diameter is RADIUS's successor for mobile networks.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>Centralized Authentication, Authorization, and Accounting (AAA) for network access</text>
+    <feedback format="html"><text>Correct. RADIUS provides centralized AAA services — authenticating users, authorizing their access level, and logging all access events for accounting/auditing.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Encrypting all traffic between network segments</text>
+    <feedback format="html"><text>Incorrect. Encryption between segments is provided by IPsec, TLS, or VPN technologies — RADIUS handles authentication and authorization, not traffic encryption.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Assigning IP addresses to network devices</text>
+    <feedback format="html"><text>Incorrect. DHCP (Dynamic Host Configuration Protocol) assigns IP addresses. RADIUS handles authentication, not IP management.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Scanning network devices for vulnerabilities</text>
+    <feedback format="html"><text>Incorrect. Vulnerability scanning is performed by tools like Nessus or Qualys. RADIUS is an authentication protocol.</text></feedback></answer>
+</question>
+
+<!-- ============================================================ -->
+<!--  CATEGORY: SY0-601 / 4. Operations and Incident Response  -->
+<!-- ============================================================ -->
+<question type="category">
+  <category><text>$course$/SY0-601/4. Operations and Incident Response</text></category>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-601 OIR-001</text></name>
+  <questiontext format="html"><text><![CDATA[During an incident investigation, a forensic analyst captures the volatile memory (RAM) of a live system. Which item should be captured FIRST according to the order of volatility?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[Order of Volatility (RFC 3227 — most volatile to least): 1) CPU registers and cache, 2) RAM (running processes, encryption keys, network connections, temp data), 3) Network state/routing tables, 4) Running processes, 5) Disk (hard drive/SSD), 6) Remote logging, 7) Physical configuration/network topology, 8) Archival media. Capture most volatile first.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>CPU registers and cache memory</text>
+    <feedback format="html"><text>Correct. CPU registers are the most volatile — they change with every instruction cycle. They must be captured first before any other investigative action modifies the system state.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Hard disk image</text>
+    <feedback format="html"><text>Incorrect. Hard disk data is persistent — it is among the least volatile. It should be captured after volatile data to avoid losing more ephemeral evidence.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>System log files from the past 30 days</text>
+    <feedback format="html"><text>Incorrect. Disk-based log files are persistent and can be captured later. Volatile memory contents (RAM, registers) must be prioritized.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Router configuration backup</text>
+    <feedback format="html"><text>Incorrect. Network device configurations are relatively stable and can be captured after volatile system memory.</text></feedback></answer>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-601 OIR-002</text></name>
+  <questiontext format="html"><text><![CDATA[An organization receives threat intelligence indicating a specific IP address is actively being used for command-and-control operations. What is the MOST effective immediate response?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[Blocking the C2 IP at the firewall immediately stops active communication between infected hosts and the attacker. This is a fast, low-risk containment action. Threat intelligence (TI) feeds automate this process in SIEM/SOAR/firewall platforms. STIX/TAXII are standards for sharing threat intelligence.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>Add the IP to the firewall block list immediately</text>
+    <feedback format="html"><text>Correct. Blocking the known C2 IP at the firewall immediately disrupts attacker communications — a fast, low-impact containment action while investigation continues.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Wait for the attacker to make contact to gather more intelligence</text>
+    <feedback format="html"><text>Incorrect. Allowing a known threat to continue operating exposes the organization to ongoing compromise and data exfiltration — immediate action is required.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Send a cease-and-desist notice to the IP address owner</text>
+    <feedback format="html"><text>Incorrect. Legal notices are ineffective against threat actors, who often use compromised or anonymized infrastructure in foreign jurisdictions.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Conduct a full enterprise-wide vulnerability scan</text>
+    <feedback format="html"><text>Incorrect. While important for broader security, a vulnerability scan does not address the immediate threat of an active C2 connection. Block first, investigate after.</text></feedback></answer>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-601 OIR-003</text></name>
+  <questiontext format="html"><text><![CDATA[Which NIST Special Publication provides guidelines for computer security incident handling?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[NIST SP 800-61 (Computer Security Incident Handling Guide) defines the incident response lifecycle: Preparation → Detection & Analysis → Containment, Eradication & Recovery → Post-Incident Activity. Other key NIST SPs: 800-53 (Security Controls), 800-171 (CUI), 800-137 (Continuous Monitoring), 800-30 (Risk Assessment).]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>NIST SP 800-61</text>
+    <feedback format="html"><text>Correct. NIST SP 800-61 "Computer Security Incident Handling Guide" is the primary NIST reference for incident response procedures and lifecycle.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>NIST SP 800-53</text>
+    <feedback format="html"><text>Incorrect. NIST SP 800-53 provides a catalog of security and privacy controls for federal information systems — not incident handling procedures.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>NIST SP 800-30</text>
+    <feedback format="html"><text>Incorrect. NIST SP 800-30 guides risk assessment processes — not incident response procedures.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>NIST SP 800-137</text>
+    <feedback format="html"><text>Incorrect. NIST SP 800-137 covers continuous monitoring of information security — not incident handling.</text></feedback></answer>
+</question>
+
+<question type="truefalse">
+  <name><text>SY0-601 OIR-004</text></name>
+  <questiontext format="html"><text><![CDATA[True or False: The eradication phase of incident response should be completed before the containment phase.]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[FALSE. The NIST incident response order is: 1) Preparation, 2) Detection & Analysis, 3) CONTAINMENT (first), 4) ERADICATION, 5) Recovery, 6) Post-Incident Activity. You must contain first to stop the bleeding before attempting eradication — otherwise the malware may spread during the eradication attempt.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>1</penalty><hidden>0</hidden>
+  <answer fraction="0"><text>true</text><feedback format="html"><text>Incorrect. Eradication comes AFTER containment. You must first limit the spread (containment) before attempting to remove the threat (eradication).</text></feedback></answer>
+  <answer fraction="100"><text>false</text><feedback format="html"><text>Correct. Containment ALWAYS precedes eradication in the incident response lifecycle. Contain → Eradicate → Recover.</text></feedback></answer>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-601 OIR-005</text></name>
+  <questiontext format="html"><text><![CDATA[A company wants to test its incident response plan without disrupting normal operations. Which exercise method is MOST appropriate?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[Tabletop exercises are discussion-based simulations where the IR team walks through a hypothetical scenario — identifying gaps in plans without real system interaction. They are low-cost, low-disruption, and excellent for training. Full-scale exercises test actual systems. Walk-throughs review the plan. Simulations (functional exercises) are more involved than tabletops.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>Tabletop exercise</text>
+    <feedback format="html"><text>Correct. Tabletop exercises are discussion-based, require no system interaction, and test the team's understanding of the IR plan without operational disruption.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Full-scale live exercise with actual system compromise simulation</text>
+    <feedback format="html"><text>Incorrect. Full-scale exercises are highly disruptive and costly. While valuable, they are not appropriate for regular testing without disrupting operations.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Red team vs. blue team exercise</text>
+    <feedback format="html"><text>Incorrect. Red vs. Blue exercises involve actual attack simulation and active defense — significantly more disruptive than a tabletop exercise.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Parallel test — running backup systems alongside production</text>
+    <feedback format="html"><text>Incorrect. Parallel testing is a BCP/DRP testing method, not specifically an incident response plan testing method.</text></feedback></answer>
+</question>
+
+<!-- ============================================================ -->
+<!--  CATEGORY: SY0-601 / 5. Governance Risk and Compliance     -->
+<!-- ============================================================ -->
+<question type="category">
+  <category><text>$course$/SY0-601/5. Governance Risk and Compliance</text></category>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-601 GRC-001</text></name>
+  <questiontext format="html"><text><![CDATA[Which of the following BEST describes the difference between a threat and a vulnerability?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[Risk vocabulary: Threat = potential harm or attack (the "what could happen"), Vulnerability = weakness that can be exploited (the "what's weak"), Risk = likelihood × impact of a threat exploiting a vulnerability, Exploit = the mechanism or code used to leverage a vulnerability. Asset + Threat + Vulnerability = Risk equation.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>A threat is a potential danger; a vulnerability is a weakness that could be exploited by a threat</text>
+    <feedback format="html"><text>Correct. A threat (e.g., ransomware actor) exploits a vulnerability (e.g., unpatched system) to cause harm. Without a vulnerability, the threat cannot succeed.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>A threat is a software weakness; a vulnerability is an external attack</text>
+    <feedback format="html"><text>Incorrect. This reverses the definitions. Software weaknesses are vulnerabilities; external attacks/adversaries are threats.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>A threat is a measured risk value; a vulnerability is a control gap</text>
+    <feedback format="html"><text>Incorrect. Risk is the measured value (probability × impact). A threat is the potential danger, not a measured value.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>They are the same concept applied in different contexts</text>
+    <feedback format="html"><text>Incorrect. Threat and vulnerability are distinctly defined terms in security risk management with different meanings and roles in the risk equation.</text></feedback></answer>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-601 GRC-002</text></name>
+  <questiontext format="html"><text><![CDATA[What is the formula for calculating Annual Loss Expectancy (ALE)?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[ALE = SLE × ARO. SLE (Single Loss Expectancy) = Asset Value × Exposure Factor (EF). ARO (Annualized Rate of Occurrence) = how many times per year the event is expected. ALE helps quantify risk in financial terms for business decisions. Example: SLE = $50,000, ARO = 0.5 (every 2 years) → ALE = $25,000/year.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>ALE = SLE × ARO (Single Loss Expectancy × Annualized Rate of Occurrence)</text>
+    <feedback format="html"><text>Correct. ALE = SLE × ARO. This formula quantifies annual risk exposure in monetary terms to support security investment decisions.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>ALE = Asset Value × Threat Level</text>
+    <feedback format="html"><text>Incorrect. This is not the correct formula. Threat level is a qualitative concept; the correct formula uses SLE and ARO.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>ALE = Risk × Impact Score</text>
+    <feedback format="html"><text>Incorrect. While risk and impact are related concepts, the specific ALE formula is SLE × ARO — a defined quantitative risk calculation.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>ALE = ARO ÷ SLE</text>
+    <feedback format="html"><text>Incorrect. The formula is multiplication, not division: ALE = SLE × ARO.</text></feedback></answer>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-601 GRC-003</text></name>
+  <questiontext format="html"><text><![CDATA[An organization conducts a security audit and finds that an employee has access to systems beyond what their job role requires. Which access control principle has been violated?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[Least privilege means granting only the minimum access needed for a role. When users accumulate permissions over time (job role changes, project assignments), this is called privilege creep. Access reviews/recertification audits are performed to detect and remediate privilege creep. User access reviews (UAR) are a key control for enforcing least privilege.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>Least privilege (evidenced by privilege creep)</text>
+    <feedback format="html"><text>Correct. Excessive access beyond job requirements violates least privilege. Over time, unreviewed permissions accumulate — called privilege creep. Regular access reviews detect this.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Separation of duties</text>
+    <feedback format="html"><text>Incorrect. Separation of duties prevents one person from having all access needed to commit and conceal fraud. The scenario describes excess individual access, not conflicting-role access.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Non-repudiation</text>
+    <feedback format="html"><text>Incorrect. Non-repudiation ensures actions cannot be denied — it is not an access control principle regarding permission levels.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Need-to-know</text>
+    <feedback format="html"><text>Partially correct — need-to-know is closely related to least privilege, but the primary Security+ term tested here is "least privilege." Both relate to access restriction based on job requirements.</text></feedback></answer>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-601 GRC-004</text></name>
+  <questiontext format="html"><text><![CDATA[Which of the following is an example of a technical control?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[Control categories: Technical (logical) = firewalls, encryption, IDS/IPS, MFA, access control systems. Administrative (managerial) = policies, procedures, training, background checks. Physical = locks, guards, cameras, fencing. Controls can also be classified as: Preventive, Detective, Corrective, Deterrent, Compensating, Recovery.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>Firewall blocking unauthorized inbound connections</text>
+    <feedback format="html"><text>Correct. A firewall is a technical/logical control — it uses software/hardware logic to enforce security policy by allowing or blocking network traffic.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>A security awareness training program</text>
+    <feedback format="html"><text>Incorrect. Security awareness training is an administrative (managerial) control — it relies on human behavior change, not technology.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>A security guard checking employee badges</text>
+    <feedback format="html"><text>Incorrect. A security guard is a physical control — a human-based physical deterrent and detection mechanism.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>An acceptable use policy (AUP)</text>
+    <feedback format="html"><text>Incorrect. An AUP is an administrative control — a documented policy governing how technology resources may be used.</text></feedback></answer>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-601 GRC-005</text></name>
+  <questiontext format="html"><text><![CDATA[What is the MAIN purpose of a Business Impact Analysis (BIA)?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[BIA identifies and prioritizes critical business functions and quantifies the impact of their disruption. Key outputs: MTD (Maximum Tolerable Downtime — how long the organization can survive without a function), RTO (Recovery Time Objective — target time to restore), RPO (Recovery Point Objective — maximum data loss tolerance). BIA drives BCP/DRP priorities.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>Identify critical business functions and quantify the impact of their disruption</text>
+    <feedback format="html"><text>Correct. A BIA determines which functions are most critical, how long they can be offline (MTD), and what resources are needed to recover them — forming the foundation of BCP/DRP planning.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Document all security vulnerabilities found during an audit</text>
+    <feedback format="html"><text>Incorrect. Documenting vulnerabilities is the output of a vulnerability assessment or security audit — not a Business Impact Analysis.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Define firewall rules for all business applications</text>
+    <feedback format="html"><text>Incorrect. Firewall rule management is an operational security task — not a BIA activity.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Establish the organization's risk tolerance levels</text>
+    <feedback format="html"><text>Incorrect. Risk tolerance is established during risk management/governance activities. BIA focuses specifically on business function criticality and disruption impact.</text></feedback></answer>
+</question>
+
+<question type="matching">
+  <name><text>SY0-601 GRC-006 Matching BCP</text></name>
+  <questiontext format="html"><text><![CDATA[Match each Business Continuity term to its correct definition.]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[RTO = how quickly you MUST restore systems (target). RPO = how much data loss is acceptable (measured in time). MTD = maximum outage the business can survive. MTTR = average time to repair/restore a failed component. MTBF = average time between failures (reliability metric).]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <shuffleanswers>true</shuffleanswers>
+  <subquestion format="html"><text>RTO (Recovery Time Objective)</text><answer><text>The target time within which a system must be restored after a disruption</text></answer></subquestion>
+  <subquestion format="html"><text>RPO (Recovery Point Objective)</text><answer><text>The maximum amount of data loss (measured in time) that is acceptable</text></answer></subquestion>
+  <subquestion format="html"><text>MTD (Maximum Tolerable Downtime)</text><answer><text>The longest time a business function can be unavailable before causing unacceptable harm</text></answer></subquestion>
+  <subquestion format="html"><text>MTBF (Mean Time Between Failures)</text><answer><text>The average time a system operates before experiencing a failure</text></answer></subquestion>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-601 GRC-007</text></name>
+  <questiontext format="html"><text><![CDATA[Which of the following frameworks is MOST commonly used for IT governance and aligning IT with business objectives?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[COBIT (Control Objectives for Information and Related Technology) is an IT governance framework from ISACA aligning IT with business goals. ITIL is IT service management. ISO 27001 is information security management. NIST CSF is cybersecurity. TOGAF is enterprise architecture. COBIT is the answer for IT governance alignment.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>COBIT (Control Objectives for Information and Related Technology)</text>
+    <feedback format="html"><text>Correct. COBIT from ISACA is the primary IT governance framework. It provides practices for governing and managing enterprise IT aligned with business strategy.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>ITIL (IT Infrastructure Library)</text>
+    <feedback format="html"><text>Incorrect. ITIL is an IT service management framework focused on delivering IT services efficiently — not specifically IT governance alignment with business objectives.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>NIST Cybersecurity Framework (CSF)</text>
+    <feedback format="html"><text>Incorrect. NIST CSF provides a risk-based cybersecurity framework (Identify, Protect, Detect, Respond, Recover) — not a full IT governance framework.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>ISO 27001</text>
+    <feedback format="html"><text>Incorrect. ISO 27001 is an information security management standard providing requirements for an ISMS — more specific to security than general IT governance.</text></feedback></answer>
+</question>
+
+<!-- ============================================================ -->
+<!--  ADDITIONAL SY0-701 ADVANCED QUESTIONS                      -->
+<!-- ============================================================ -->
+<question type="category">
+  <category><text>$course$/SY0-701/2. Threats Vulnerabilities and Mitigations</text></category>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-701 TVM-009</text></name>
+  <questiontext format="html"><text><![CDATA[A security team discovers that an attacker has inserted themselves between a user's browser and a banking website by presenting a fake TLS certificate. The user's browser shows a valid padlock. What attack technique makes this possible?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[SSL/TLS interception (SSL stripping or TLS MitM) with a rogue CA certificate installed on the victim's machine allows the attacker to present a trusted-looking certificate. Corporate proxies use this legitimately (with awareness). Attackers achieve this via malware installing a rogue root CA, or via publicly-trusted CA compromise. Certificate Transparency and public key pinning help detect this.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>TLS interception using a rogue trusted certificate authority installed on the victim's system</text>
+    <feedback format="html"><text>Correct. By installing a rogue root CA cert on the victim's system (often via malware), the attacker can issue certificates for any site that the browser trusts, enabling TLS MitM.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>DNS cache poisoning redirecting traffic to a malicious server</text>
+    <feedback format="html"><text>Partially related — DNS poisoning redirects users to attacker-controlled servers, but this does not explain how a valid padlock (trusted TLS cert) is shown.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>A brute force attack against the bank's TLS private key</text>
+    <feedback format="html"><text>Incorrect. Modern TLS private keys (2048-bit RSA or 256-bit ECC) are computationally infeasible to brute force. This is not a realistic attack vector.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>SQL injection exploiting the banking web application</text>
+    <feedback format="html"><text>Incorrect. SQL injection targets database queries, not TLS certificates or browser trust. It would not produce a valid padlock display.</text></feedback></answer>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-701 TVM-010</text></name>
+  <questiontext format="html"><text><![CDATA[Which of the following BEST describes a "living off the land" (LOTL) attack technique?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA["Living off the land" attacks use built-in OS tools and legitimate system utilities (LOLBins — Living Off the Land Binaries) to perform malicious actions. Examples: using PowerShell, WMI, certutil, mshta, regsvr32 for malicious purposes. LOTL is hard to detect because these tools are legitimate and whitelisted. EDR and behavioral analytics are needed to detect LOTL.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>Using legitimate built-in OS tools (e.g., PowerShell, WMI) for malicious purposes to avoid detection</text>
+    <feedback format="html"><text>Correct. LOTL techniques abuse legitimate tools that are trusted and whitelisted, making detection difficult for signature-based AV. Behavioral detection is required.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Physically accessing a server room while posing as a maintenance worker</text>
+    <feedback format="html"><text>Incorrect. This is physical social engineering / impersonation — not a LOTL technique, which is specifically about leveraging existing OS tools.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Downloading and running custom malware from an external C2 server</text>
+    <feedback format="html"><text>Incorrect. Downloading external tools is the opposite of LOTL. LOTL specifically avoids introducing new executables by using what's already on the system.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Exploiting a zero-day browser vulnerability to gain initial access</text>
+    <feedback format="html"><text>Incorrect. While zero-days may be used for initial access, the LOTL technique refers specifically to post-compromise tactics using built-in OS utilities.</text></feedback></answer>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-701 TVM-011</text></name>
+  <questiontext format="html"><text><![CDATA[A company's security team discovers that attackers have been stealing data by encoding it in DNS queries to an external server. What type of attack technique is this?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[DNS tunneling encodes data within DNS queries/responses to bypass security controls. Attackers use it for C2 communication and data exfiltration because DNS is typically allowed through firewalls. Defense: DNS filtering (e.g., Cisco Umbrella), monitoring for unusual DNS query patterns (long subdomains, high query frequency to a single domain).]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>DNS tunneling</text>
+    <feedback format="html"><text>Correct. DNS tunneling encodes data within DNS queries/responses to exfiltrate data or communicate with C2 servers, bypassing firewalls that allow DNS traffic.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>DNS cache poisoning</text>
+    <feedback format="html"><text>Incorrect. DNS cache poisoning injects false DNS records to redirect users to malicious sites — it does not encode data in queries for exfiltration.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>DNS amplification DDoS</text>
+    <feedback format="html"><text>Incorrect. DNS amplification uses open resolvers to flood a target with large DNS responses — a DDoS attack, not a data exfiltration technique.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Domain hijacking</text>
+    <feedback format="html"><text>Incorrect. Domain hijacking takes over a legitimate domain by changing DNS records through the registrar — not a data exfiltration technique.</text></feedback></answer>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-701 TVM-012</text></name>
+  <questiontext format="html"><text><![CDATA[Which of the following BEST describes a "Kerberoasting" attack?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[Kerberoasting is an Active Directory attack where an authenticated domain user requests Kerberos service tickets (TGS) for service accounts with SPNs (Service Principal Names), then performs offline brute force/dictionary attacks against the encrypted ticket to recover the service account's plaintext password. Defense: use long, complex service account passwords; managed service accounts; monitor for unusual TGS requests.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>Requesting Kerberos service tickets and performing offline password cracking against them</text>
+    <feedback format="html"><text>Correct. Kerberoasting extracts service tickets encrypted with service account password hashes, which can be cracked offline without triggering account lockout.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Replaying captured Kerberos authentication tokens to gain unauthorized access</text>
+    <feedback format="html"><text>Incorrect. This describes a Pass-the-Ticket (PTT) attack — replaying a valid Kerberos ticket, not cracking encrypted service ticket passwords.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Exploiting a vulnerability in the Kerberos protocol to bypass authentication entirely</text>
+    <feedback format="html"><text>Incorrect. This does not describe Kerberoasting, which works within legitimate Kerberos functionality. The Skeleton Key malware or Golden/Silver Ticket attacks more closely match protocol exploitation.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Using brute force to guess the Kerberos KDC administrator password</text>
+    <feedback format="html"><text>Incorrect. Kerberoasting targets regular service account tickets, not the KDC admin password directly.</text></feedback></answer>
+</question>
+
+<!-- ============================================================ -->
+<!--  ADDITIONAL SY0-701 SECURITY ARCHITECTURE QUESTIONS        -->
+<!-- ============================================================ -->
+<question type="category">
+  <category><text>$course$/SY0-701/3. Security Architecture</text></category>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-701 SA-007</text></name>
+  <questiontext format="html"><text><![CDATA[An organization is migrating to a SASE (Secure Access Service Edge) architecture. Which of the following capabilities does SASE combine?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[SASE (Secure Access Service Edge, pronounced "sassy") converges WAN networking and security services into a cloud-delivered model. It combines: SD-WAN (networking), CASB (cloud security), ZTNA (Zero Trust Network Access), FWaaS (Firewall as a Service), and SWG (Secure Web Gateway). It supports distributed workforces connecting from anywhere.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>SD-WAN networking with cloud-delivered security services including ZTNA, CASB, and FWaaS</text>
+    <feedback format="html"><text>Correct. SASE converges WAN optimization (SD-WAN) with cloud-native security services, providing secure access for distributed users and branch offices without requiring traffic to backhaul through a data center.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Traditional MPLS circuits with on-premises perimeter firewalls</text>
+    <feedback format="html"><text>Incorrect. MPLS + on-prem firewalls is the legacy enterprise architecture that SASE is designed to replace — not a component of SASE.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>VPN concentrators deployed at each branch office</text>
+    <feedback format="html"><text>Incorrect. Traditional VPNs are a legacy access model. SASE uses ZTNA to replace VPNs, providing more granular access control and better performance for cloud applications.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Dedicated hardware firewalls at each location with centralized SIEM</text>
+    <feedback format="html"><text>Incorrect. Per-location hardware firewalls with central SIEM is a traditional architecture. SASE is a cloud-delivered, converged model that eliminates the need for per-location security appliances.</text></feedback></answer>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-701 SA-008</text></name>
+  <questiontext format="html"><text><![CDATA[An organization wants to use a technology that allows network security policies to be defined in software and dynamically applied across the network without manual configuration of individual devices. Which technology is this?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[SDN (Software-Defined Networking) separates the control plane (where routing/security decisions are made) from the data plane (where packets are forwarded). A centralized controller manages the network programmatically via APIs. This enables dynamic security policy enforcement, microsegmentation, and network automation.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>Software-Defined Networking (SDN)</text>
+    <feedback format="html"><text>Correct. SDN decouples the control plane from data plane, allowing centralized, programmable network management. Security policies can be pushed to all devices simultaneously via the SDN controller.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>MPLS (Multi-Protocol Label Switching)</text>
+    <feedback format="html"><text>Incorrect. MPLS is a WAN traffic engineering protocol that uses labels to route packets — it does not provide software-defined policy management.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Spanning Tree Protocol (STP)</text>
+    <feedback format="html"><text>Incorrect. STP prevents Layer 2 switching loops — it is not a software-defined networking or policy management technology.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>SNMP (Simple Network Management Protocol)</text>
+    <feedback format="html"><text>Incorrect. SNMP monitors and manages network devices but does not provide dynamic policy enforcement or the centralized control-plane/data-plane separation of SDN.</text></feedback></answer>
+</question>
+
+<!-- ============================================================ -->
+<!--  ADDITIONAL SY0-701 SECURITY OPERATIONS QUESTIONS          -->
+<!-- ============================================================ -->
+<question type="category">
+  <category><text>$course$/SY0-701/4. Security Operations</text></category>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-701 SO-009</text></name>
+  <questiontext format="html"><text><![CDATA[A SOC analyst receives an alert that a user account logged in from Ireland at 9 AM and then from Australia at 9:15 AM. What type of detection alert is this?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[This is an "impossible travel" alert — a UEBA (User and Entity Behavior Analytics) detection. It is physically impossible to travel from Ireland to Australia in 15 minutes, indicating either credential compromise, VPN use, or account sharing. UEBA uses machine learning baselines to detect anomalous behavior patterns like impossible travel, unusual hours, or abnormal data access volumes.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>Impossible travel / UEBA (User and Entity Behavior Analytics) anomaly</text>
+    <feedback format="html"><text>Correct. Impossible travel detection flags authentication events from geographically distant locations within a timeframe that is physically impossible, suggesting credential compromise.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Time-based brute force attack</text>
+    <feedback format="html"><text>Incorrect. A brute force attack involves repeated failed login attempts — not successful logins from different geographic locations.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Insider threat data exfiltration event</text>
+    <feedback format="html"><text>Incorrect. While the alert could relate to an insider threat, the specific technical term for geographically impossible logins is "impossible travel" detection.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>DNS hijacking event</text>
+    <feedback format="html"><text>Incorrect. DNS hijacking redirects domain resolution — it would not produce a geographically anomalous authentication pattern by itself.</text></feedback></answer>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-701 SO-010</text></name>
+  <questiontext format="html"><text><![CDATA[Which of the following BEST describes the purpose of threat hunting in a SOC?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[Threat hunting is a proactive, hypothesis-driven process where analysts actively search for threats that have evaded existing detection tools (SIEM, EDR). It differs from incident response (reactive) and monitoring (alert-driven). Threat hunters form hypotheses (e.g., "an APT may have compromised our AD using Kerberoasting") and investigate proactively.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>Proactively searching for threats that have evaded automated detection tools</text>
+    <feedback format="html"><text>Correct. Threat hunting assumes adversaries may already be present but undetected. Hunters proactively investigate TTPs rather than waiting for alerts.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Responding to SIEM alerts and escalating confirmed incidents</text>
+    <feedback format="html"><text>Incorrect. This describes alert triage / Tier 1 SOC analyst work — a reactive function, not proactive threat hunting.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Running automated vulnerability scans against production systems</text>
+    <feedback format="html"><text>Incorrect. Vulnerability scanning is a technical assessment task. Threat hunting involves human-led investigation of behavioral patterns, not automated scanning.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Updating firewall rules in response to new threat intelligence feeds</text>
+    <feedback format="html"><text>Incorrect. Applying threat intelligence to security controls is intelligence-driven defense — not threat hunting, which is a manual investigation-based discipline.</text></feedback></answer>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-701 SO-011</text></name>
+  <questiontext format="html"><text><![CDATA[An employee clicks a phishing link and malware executes on their workstation. The malware encrypts all files and displays a ransom note. According to the incident response lifecycle, which phase is the organization currently in when the ransom note is first displayed?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[NIST IR Lifecycle: 1) Preparation (before incident), 2) Detection & Analysis (identifying the incident), 3) Containment, Eradication & Recovery (responding), 4) Post-Incident Activity (lessons learned). When the ransom note is FIRST displayed, the organization is in Detection & Analysis — they have just identified/detected the incident and must now analyze scope before moving to containment.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>Detection and Analysis</text>
+    <feedback format="html"><text>Correct. The ransom note is the detection event. The team must now analyze scope (how far did the ransomware spread?) before moving to containment. Detection &amp; Analysis is the current phase.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Preparation</text>
+    <feedback format="html"><text>Incorrect. Preparation happens before an incident occurs — establishing IR plans, tools, and training. An active incident has already moved past preparation.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Eradication</text>
+    <feedback format="html"><text>Incorrect. Eradication removes the malware from affected systems — this happens after containment and thorough analysis, not when the note is first displayed.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Post-incident activity</text>
+    <feedback format="html"><text>Incorrect. Post-incident activity (lessons learned) occurs after the incident is fully resolved — not while the ransom note is actively displaying.</text></feedback></answer>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-701 SO-012</text></name>
+  <questiontext format="html"><text><![CDATA[An organization implements a system that dynamically adjusts user access privileges based on continuous evaluation of risk signals such as device health, location, and behavior. Which access model is this?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[Adaptive authentication / risk-based access control (also called Continuous Adaptive Trust or Context-Aware Access) uses real-time risk signals to dynamically adjust access. If risk is low (trusted device, normal location, normal behavior) → full access. If risk is elevated (new device, unusual location) → step-up authentication or limited access. This is a core Zero Trust capability.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>Risk-based adaptive access control / Continuous Adaptive Trust</text>
+    <feedback format="html"><text>Correct. This Zero Trust-aligned model continuously evaluates contextual risk signals and adjusts access dynamically — e.g., requiring MFA step-up when an anomaly is detected.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Mandatory Access Control (MAC)</text>
+    <feedback format="html"><text>Incorrect. MAC assigns access based on fixed security labels (classification levels) — it does not dynamically adjust based on real-time behavioral signals.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Discretionary Access Control (DAC)</text>
+    <feedback format="html"><text>Incorrect. DAC allows resource owners to set permissions — it is not a dynamic, risk-signal-driven model.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Role-Based Access Control (RBAC)</text>
+    <feedback format="html"><text>Incorrect. RBAC assigns permissions based on predefined roles — it does not dynamically adjust based on real-time device health or behavioral signals.</text></feedback></answer>
+</question>
+
+<!-- ============================================================ -->
+<!--  ADDITIONAL SY0-701 MANAGEMENT QUESTIONS                   -->
+<!-- ============================================================ -->
+<question type="category">
+  <category><text>$course$/SY0-701/5. Security Program Management and Oversight</text></category>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-701 SPMO-007</text></name>
+  <questiontext format="html"><text><![CDATA[An organization wants to ensure its security controls are evaluated by an independent party. Which type of assessment would provide this?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[Audit types: Internal audit (first-party — organization audits itself), Self-assessment (internal team), Second-party audit (by a business partner), Third-party audit (by an independent external organization — most objective). External audits are required for SOC 2, ISO 27001 certification, PCI DSS, and regulatory compliance.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>Third-party (external) audit</text>
+    <feedback format="html"><text>Correct. A third-party audit is conducted by an independent external organization with no financial or organizational relationship, providing the most objective assessment of security controls.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Self-assessment by the IT security team</text>
+    <feedback format="html"><text>Incorrect. Self-assessments are useful but lack independence — the same team that implements controls is evaluating them, creating a potential conflict of interest.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Vulnerability scan performed by the internal SOC</text>
+    <feedback format="html"><text>Incorrect. An internal vulnerability scan is a technical assessment tool but is not an independent audit of security controls by an outside party.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Risk assessment by senior management</text>
+    <feedback format="html"><text>Incorrect. Management risk assessments are important governance activities but are not independent third-party evaluations of security controls.</text></feedback></answer>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-701 SPMO-008</text></name>
+  <questiontext format="html"><text><![CDATA[Which of the following BEST describes the purpose of a data classification policy?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[Data classification assigns sensitivity labels to data to ensure appropriate protection. Government: Top Secret > Secret > Confidential > Unclassified. Commercial: Restricted/Confidential > Internal > Public. Classification drives encryption requirements, access controls, handling procedures, and retention policies. DLP systems can enforce classification-based controls.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>Assigning sensitivity labels to data to ensure appropriate security controls are applied based on data value and risk</text>
+    <feedback format="html"><text>Correct. Data classification identifies data sensitivity levels so that appropriate controls (encryption, access restrictions, handling procedures) are applied proportionate to the data's value and risk.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Encrypting all organizational data with AES-256 regardless of sensitivity</text>
+    <feedback format="html"><text>Incorrect. Encrypting everything regardless of sensitivity level is not classification — classification determines WHICH data needs what level of protection. Not all data requires the same controls.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Defining backup schedules for different types of data</text>
+    <feedback format="html"><text>Incorrect. Backup schedules are part of data management/DRP planning. Data classification drives security controls, not just backup frequency.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Preventing employees from storing personal files on company systems</text>
+    <feedback format="html"><text>Incorrect. This is addressed by an Acceptable Use Policy (AUP), not a data classification policy.</text></feedback></answer>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-701 SPMO-009</text></name>
+  <questiontext format="html"><text><![CDATA[A company hires a new vendor to process employee payroll data. Which document should PRIMARILY govern the security obligations of the vendor regarding that data?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[A Data Processing Agreement (DPA) or Business Associate Agreement (BAA under HIPAA) formally defines a vendor's obligations for handling personal/sensitive data. Under GDPR, a DPA is legally required between data controllers and processors. The DPA defines: what data is processed, how it's secured, breach notification requirements, sub-processor restrictions, and data retention/deletion.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>Data Processing Agreement (DPA) / Vendor security addendum</text>
+    <feedback format="html"><text>Correct. A DPA legally binds the vendor to specific data protection obligations, including security controls, breach notification, and data handling requirements — essential for third-party data processing relationships.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Non-disclosure agreement (NDA)</text>
+    <feedback format="html"><text>Incorrect. An NDA addresses confidentiality but does not specify security controls, breach notification requirements, or data handling obligations for a processor relationship.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Master Service Agreement (MSA)</text>
+    <feedback format="html"><text>Incorrect. An MSA governs the overall commercial relationship. Security-specific data processing obligations require a separate DPA or security addendum.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Service Level Agreement (SLA)</text>
+    <feedback format="html"><text>Incorrect. An SLA defines performance metrics (uptime, response times). While important, it does not govern the vendor's security obligations for data handling.</text></feedback></answer>
+</question>
+
+<!-- ============================================================ -->
+<!--  ADDITIONAL SY0-601 IMPLEMENTATION QUESTIONS               -->
+<!-- ============================================================ -->
+<question type="category">
+  <category><text>$course$/SY0-601/3. Implementation</text></category>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-601 IMP-008</text></name>
+  <questiontext format="html"><text><![CDATA[An administrator wants to secure email communications so recipients can verify the sender's identity and ensure the message has not been altered. Which technology should be implemented?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[S/MIME (Secure/Multipurpose Internet Mail Extensions) provides email encryption (confidentiality) and digital signatures (integrity + authentication + non-repudiation). It uses X.509 certificates. PGP (Pretty Good Privacy) is an alternative using a "web of trust" model. DKIM authenticates the mail server, not the user. SPF and DMARC prevent spoofing but don't encrypt content.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>S/MIME (Secure/Multipurpose Internet Mail Extensions)</text>
+    <feedback format="html"><text>Correct. S/MIME uses digital signatures (based on X.509 certificates) to verify sender identity and message integrity, and can also encrypt message content for confidentiality.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>SPF (Sender Policy Framework)</text>
+    <feedback format="html"><text>Incorrect. SPF is a DNS-based email authentication record that prevents server-level spoofing — it does not sign individual messages or verify sender identity at the user level.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>STARTTLS</text>
+    <feedback format="html"><text>Incorrect. STARTTLS encrypts the SMTP transmission channel (transport-level security) but does not sign or encrypt the message content itself — the message is decrypted at each relay server.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>DMARC (Domain-based Message Authentication Reporting and Conformance)</text>
+    <feedback format="html"><text>Incorrect. DMARC is a policy framework that tells receiving servers what to do with emails that fail SPF/DKIM checks — it does not sign individual messages or provide user-level authentication.</text></feedback></answer>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-601 IMP-009</text></name>
+  <questiontext format="html"><text><![CDATA[Which wireless security protocol is considered MOST secure for enterprise environments as of current standards?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[WPA3 (Wi-Fi Protected Access 3), released in 2018, is the current standard. Key improvements: SAE (Simultaneous Authentication of Equals) replacing PSK — resistant to offline dictionary attacks. 192-bit security mode for enterprise. Protected Management Frames mandatory. Forward secrecy. WEP is deprecated; WPA is deprecated; WPA2 is still acceptable but WPA3 is preferred.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>WPA3-Enterprise</text>
+    <feedback format="html"><text>Correct. WPA3-Enterprise with 802.1X authentication provides the highest security for wireless networks, using SAE, 192-bit encryption, and mandatory Protected Management Frames.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>WPA2-Personal (PSK)</text>
+    <feedback format="html"><text>Incorrect. WPA2-Personal uses a Pre-Shared Key vulnerable to offline dictionary attacks if captured during the 4-way handshake. WPA3 addresses this with SAE.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>WEP (Wired Equivalent Privacy)</text>
+    <feedback format="html"><text>Incorrect. WEP is severely compromised and deprecated. RC4-based WEP can be cracked in minutes using freely available tools — it should never be used.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>WPA (Wi-Fi Protected Access)</text>
+    <feedback format="html"><text>Incorrect. Original WPA used TKIP (Temporal Key Integrity Protocol) — also deprecated. WPA2 and WPA3 replaced it.</text></feedback></answer>
+</question>
+
+<question type="multichoice">
+  <name><text>SY0-601 IMP-010</text></name>
+  <questiontext format="html"><text><![CDATA[A system administrator needs to securely transfer files between servers. Which protocol provides an encrypted alternative to FTP?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[SFTP (SSH File Transfer Protocol) runs over SSH (port 22) and provides encrypted file transfer. FTPS (FTP over TLS) encrypts FTP using TLS. SCP (Secure Copy Protocol) is another SSH-based file transfer. Standard FTP (port 21) and TFTP (UDP port 69) are unencrypted and should not be used for sensitive data.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>SFTP (SSH File Transfer Protocol)</text>
+    <feedback format="html"><text>Correct. SFTP runs over SSH and provides fully encrypted file transfer, replacing the plaintext FTP protocol. It uses port 22 (same as SSH).</text></feedback></answer>
+  <answer fraction="0" format="html"><text>TFTP (Trivial File Transfer Protocol)</text>
+    <feedback format="html"><text>Incorrect. TFTP is a simpler, unencrypted protocol using UDP port 69 — typically used for network device booting or firmware transfers in controlled environments, not secure file transfer.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>FTP on port 21</text>
+    <feedback format="html"><text>Incorrect. Standard FTP transmits credentials and data in plaintext — it is the protocol being replaced, not a secure alternative.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>HTTP on port 80</text>
+    <feedback format="html"><text>Incorrect. HTTP is a web protocol for web page transfer, transmitted in plaintext — not designed for secure file transfer between servers.</text></feedback></answer>
+</question>
+
+<!-- ============================================================ -->
+<!--  BONUS: PERFORMANCE-BASED SCENARIO QUESTIONS               -->
+<!-- ============================================================ -->
+<question type="category">
+  <category><text>$course$/Performance-Based Scenarios</text></category>
+</question>
+
+<question type="multichoice">
+  <name><text>PBQ-001 Scenario: Firewall Rule Analysis</text></name>
+  <questiontext format="html"><text><![CDATA[<b>SCENARIO:</b> You are reviewing the following firewall rule set (rules processed top-to-bottom, first match wins):<br><br>
+Rule 1: ALLOW TCP 192.168.1.0/24 → 10.0.0.5:443<br>
+Rule 2: DENY TCP 192.168.1.100 → ANY:ANY<br>
+Rule 3: ALLOW TCP 192.168.1.0/24 → 10.0.0.5:80<br>
+Rule 4: DENY ANY → ANY (implicit deny)<br><br>
+A user at 192.168.1.100 attempts to connect to 10.0.0.5 on port 443. What will happen?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[Firewall rules are processed top-to-bottom, first match wins. 192.168.1.100 matches Rule 1 (ALLOW TCP 192.168.1.0/24 → 10.0.0.5:443) BEFORE Rule 2 (DENY 192.168.1.100). Since Rule 1 is evaluated first and matches, the traffic is ALLOWED. Rule 2 is never reached. Rule ordering is critical — more specific rules should be placed before broader rules, or deny rules before allow rules if the deny should take precedence.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>Traffic is ALLOWED — Rule 1 matches first before Rule 2 is evaluated</text>
+    <feedback format="html"><text>Correct. Rule 1 (ALLOW /24 → port 443) matches 192.168.1.100's connection to port 443 before Rule 2 (DENY 192.168.1.100) is reached. First match wins.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Traffic is DENIED — Rule 2 specifically denies 192.168.1.100</text>
+    <feedback format="html"><text>Incorrect. While Rule 2 does deny 192.168.1.100, it is never reached for this connection because Rule 1 already matches. Firewall rules process top-to-bottom — first match wins.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Traffic is DENIED by Rule 4 (implicit deny)</text>
+    <feedback format="html"><text>Incorrect. The implicit deny (Rule 4) is only reached if no prior rule matches. Rule 1 already matches this traffic — Rule 4 is not evaluated.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Traffic is ALLOWED on port 80 only, not port 443</text>
+    <feedback format="html"><text>Incorrect. Rule 1 explicitly allows port 443, and it matches first. Port 80 access is governed by Rule 3, but the question asks about port 443.</text></feedback></answer>
+</question>
+
+<question type="multichoice">
+  <name><text>PBQ-002 Scenario: Log Analysis</text></name>
+  <questiontext format="html"><text><![CDATA[<b>SCENARIO:</b> A security analyst reviews authentication logs and finds the following entries over a 5-minute window:<br><br>
+<code>
+2026-08-09 14:00:01 FAIL user:admin src:203.0.113.45<br>
+2026-08-09 14:00:12 FAIL user:admin src:203.0.113.45<br>
+2026-08-09 14:00:28 FAIL user:admin src:203.0.113.45<br>
+2026-08-09 14:01:45 FAIL user:admin src:203.0.113.45<br>
+...(247 more FAIL entries)...<br>
+2026-08-09 14:04:59 FAIL user:admin src:203.0.113.45
+</code><br><br>
+What attack type does this log pattern MOST likely indicate?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[250+ failed login attempts for the "admin" account from a single IP over 5 minutes = brute force attack. Mitigations: account lockout policy (e.g., lock after 5 failed attempts), CAPTCHA, IP-based rate limiting, geoblocking, MFA (renders password-only brute force ineffective). Alert on multiple failed authentications is a basic SIEM rule.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>Brute force attack targeting the admin account from a single IP</text>
+    <feedback format="html"><text>Correct. 250+ rapid sequential login failures for one account from one IP is a textbook brute force attack. Account lockout and IP rate limiting should trigger automatically.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Password spraying attack across multiple accounts</text>
+    <feedback format="html"><text>Incorrect. Password spraying tries one or few passwords across MANY accounts to avoid lockout. This log shows MANY attempts on ONE account — brute force, not spraying.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>Credential stuffing using a leaked credential database</text>
+    <feedback format="html"><text>Incorrect. Credential stuffing uses specific username/password pairs from breaches — it typically doesn't show this many sequential failures for the exact same username repeatedly.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>An insider threat testing administrative access</text>
+    <feedback format="html"><text>Incorrect. An insider already has legitimate access. Repeated failures from an external IP address indicate an external attack, not an insider with existing access.</text></feedback></answer>
+</question>
+
+<question type="multichoice">
+  <name><text>PBQ-003 Scenario: Incident Response</text></name>
+  <questiontext format="html"><text><![CDATA[<b>SCENARIO:</b> At 2:17 AM, your SIEM generates the following alerts simultaneously:<br>
+• 50 GB of data transferred to cloud storage from finance server<br>
+• New local administrator account "svc_backup" created on finance server<br>
+• PowerShell execution with base64-encoded command on finance server<br>
+• Security logs cleared on finance server<br><br>
+Which of the following BEST represents the CORRECT order of your immediate response?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[This is a confirmed active breach with data exfiltration in progress. Correct order: 1) CONTAIN — isolate the finance server immediately to stop ongoing exfiltration. 2) Preserve evidence — capture volatile memory and disk image before any changes. 3) Analyze — determine scope and entry vector. 4) Eradicate — remove malware, backdoors, unauthorized accounts. 5) Recover. 6) Post-incident review. Do NOT reboot (destroys volatile evidence). Do NOT wait.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>1) Isolate the finance server immediately → 2) Capture volatile memory for forensics → 3) Investigate scope → 4) Eradicate threats → 5) Recover</text>
+    <feedback format="html"><text>Correct. Containment (isolation) is the immediate priority to stop ongoing exfiltration. Forensic preservation before analysis, then systematic eradication and recovery following the NIST IR lifecycle.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>1) Reboot the finance server to stop malicious processes → 2) Restore from last backup → 3) Notify management</text>
+    <feedback format="html"><text>Incorrect. Rebooting destroys volatile memory evidence (RAM contents, running processes). Restoring before forensic analysis eliminates all evidence of the breach. Management notification is part of the plan but not the first technical action.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>1) Run antivirus scan → 2) Delete the unauthorized admin account → 3) Change all passwords</text>
+    <feedback format="html"><text>Incorrect. Running AV on an actively compromised, network-connected system may trigger data destruction (some ransomware detects AV and accelerates encryption). Containment must come first. Also, deleting accounts before forensic analysis destroys evidence.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>1) Wait until business hours to involve management → 2) Investigate logs → 3) Apply patches</text>
+    <feedback format="html"><text>Incorrect. Active data exfiltration at 2:17 AM requires immediate response — waiting until business hours allows ongoing data loss. Security teams must have 24/7 on-call capabilities for critical incidents.</text></feedback></answer>
+</question>
+
+<question type="multichoice">
+  <name><text>PBQ-004 Scenario: Cryptography Choice</text></name>
+  <questiontext format="html"><text><![CDATA[<b>SCENARIO:</b> A developer needs to implement a solution with the following requirements:<br>
+• Two parties who have never met must securely exchange a symmetric encryption key over an untrusted network<br>
+• The exchanged key must not be compromised even if all future communications are recorded and the long-term key is later compromised<br>
+• Performance must be suitable for high-volume transaction processing<br><br>
+Which combination of algorithms BEST satisfies ALL requirements?]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[Requirement 1 (key exchange over untrusted network without prior meeting) = asymmetric key exchange (Diffie-Hellman, ECDH). Requirement 2 (forward secrecy — past sessions safe if key later compromised) = Ephemeral Diffie-Hellman (DHE or ECDHE). Requirement 3 (performance for bulk encryption) = AES-256-GCM (symmetric, fast). Combine: ECDHE for key exchange + AES-256-GCM for data. This is exactly how TLS 1.3 works.]]></text></generalfeedback>
+  <defaultgrade>1</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+  <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>ABCD</answernumbering>
+  <answer fraction="100" format="html"><text>ECDHE (Elliptic Curve Diffie-Hellman Ephemeral) for key exchange + AES-256-GCM for data encryption</text>
+    <feedback format="html"><text>Correct. ECDHE provides forward secrecy (ephemeral keys not stored) for key exchange. AES-256-GCM provides high-performance authenticated encryption for bulk data. This is the cipher suite used in TLS 1.3.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>RSA-2048 for both key exchange and data encryption</text>
+    <feedback format="html"><text>Incorrect. RSA does not provide forward secrecy when used for key exchange (static RSA key exchange). RSA is also computationally expensive for bulk data encryption compared to AES.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>AES-256 for key exchange + SHA-256 for data encryption</text>
+    <feedback format="html"><text>Incorrect. AES cannot be used for key exchange (it's symmetric — requires a pre-shared key). SHA-256 is a hash function, not an encryption algorithm.</text></feedback></answer>
+  <answer fraction="0" format="html"><text>MD5 for key exchange + DES for data encryption</text>
+    <feedback format="html"><text>Incorrect. MD5 is a deprecated hash function (not for key exchange) with known collision vulnerabilities. DES (56-bit key) is deprecated and broken. Neither meets current security requirements.</text></feedback></answer>
+</question>
+
+</quiz>
