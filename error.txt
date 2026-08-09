@@ -1,0 +1,37 @@
+install-moodle-ubuntu25 new.sh: line 171: bc: command not found
+
+[ERROR] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[ERROR]  INSTALLATION FAILED at line 171
+[ERROR]  Exit code: 127
+[ERROR]  Full log: /var/log/moodle_install.log
+[ERROR] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[ERROR] Attempting to clean up partial database objects...
+
+[ERROR] To retry from scratch: sudo bash install-moodle-ubuntu25 new.sh
+root@sl-lms01:~/test# cat /var/log/moodle_install.log
+
+======================================================
+ Moodle Install Script — 2026-08-09 17:48:03
+======================================================
+
+══════════════════════════════════════════
+  Step 1: Pre-flight checks
+══════════════════════════════════════════
+[OK]    Running as root
+[INFO]  Detected OS: Ubuntu 25.04
+[OK]    Ubuntu 25.04 — supported
+[INFO]  Checking internet connectivity...
+[OK]    Internet connectivity OK
+install-moodle-ubuntu25 new.sh: line 171: bc: command not found
+
+[ERROR] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[ERROR]  INSTALLATION FAILED at line 171
+[ERROR]  Exit code: 127
+[ERROR]  Full log: /var/log/moodle_install.log
+[ERROR] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[ERROR] Attempting to clean up partial database objects...
+
+[ERROR] To retry from scratch: sudo bash install-moodle-ubuntu25 new.sh
+root@sl-lms01:~/test# 
