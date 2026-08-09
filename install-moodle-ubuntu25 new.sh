@@ -168,7 +168,7 @@ success "Internet connectivity OK"
 
 # 4. Disk space (require at least 3 GB free in /var)
 AVAIL_KB=$(df /var --output=avail | tail -1)
-AVAIL_GB=$(echo "scale=1; $AVAIL_KB / 1048576" | bc)
+AVAIL_GB=$(awk "BEGIN {printf \"%.1f\", $AVAIL_KB / 1048576}")
 if [[ "$AVAIL_KB" -lt 3145728 ]]; then
     error "Insufficient disk space in /var: ${AVAIL_GB} GB available, 3 GB required."
     exit 1
