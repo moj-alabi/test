@@ -1,0 +1,1 @@
+curl -s "http://10.0.10.149:5522/api/app/satellite/install?t=128d0e10fcb1bcd9b225c6b593fcdaca84cc73dfb257d7c1cdda116d0294b53d" | sudo sh
