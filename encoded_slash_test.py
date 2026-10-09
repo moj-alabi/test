@@ -54,8 +54,14 @@ def encode_all(value):
 
 
 def run_probes(target, probes, ua, interval):
-    """Send each probe and print its path (left-aligned) with a colored status."""
+    """Send each probe and print its path with a colored status.
+
+    Returns a dict mapping each probe string to its raw status code
+    (an int, or the string "ERR" when the request failed) so callers
+    can build summaries from the results.
+    """
     width = max(len(p) for p in probes)
+    results = {}
     for probe in probes:
         try:
             r = requests.get(
@@ -64,11 +70,14 @@ def run_probes(target, probes, ua, interval):
                 timeout=5,
                 allow_redirects=False,
             )
+            results[probe] = r.status_code
             status = color_status(r.status_code)
         except Exception as e:
+            results[probe] = "ERR"
             status = f"{color_status('ERR')} {e}"
         log(f"  {probe.ljust(width)}  ->  {status}")
         time.sleep(interval)
+    return results
 
 
 def test_encoded_slash(target, interval):
@@ -99,10 +108,81 @@ def test_encoded_index_html(target, interval):
     run_probes(target, probes, "encoded-index-tester", interval)
 
 
+def test_encoded_pages(target, interval):
+    """Request real app routes plain, single-encoded, and double-encoded.
+
+    For each route we send three forms and compare the HTTP status:
+      - plain:         /login
+      - single-encoded segment:    /%6C%6F%67%69%6E
+      - double-encoded segment:    /%256C%256F...
+    If plain and encoded forms return the SAME status, the edge/WAF is
+    normalizing (decoding) the path before it decides. If they differ,
+    the WAF is matching the literal bytes and missing the encoded form.
+
+    The root route "/" has no segment to encode, so it is probed plain
+    only as a reachability baseline.
+    """
+    routes = ["/", "/teams", "/users", "/scoreboard", "/login", "/register"]
+    log(c("1", "=== ENCODED REAL-ROUTE TEST ==="))
+
+    # Build the probe forms per route and remember which is which.
+    probes = []
+    forms = {}  # route -> {"plain": probe, "single": probe|None, "double": probe|None}
+    for route in routes:
+        plain_p = route
+        segment = route.lstrip("/")               # 'login'; '' for root
+        if segment:
+            single = encode_all(segment)          # 'login' -> %6C%6F...
+            double = single.replace("%", "%25")   # double-encode: % -> %25
+            single_p, double_p = f"/{single}", f"/{double}"
+            probes.extend([plain_p, single_p, double_p])
+        else:
+            single_p = double_p = None            # nothing to encode for "/"
+            probes.append(plain_p)
+        forms[route] = {"plain": plain_p, "single": single_p, "double": double_p}
+
+    results = run_probes(target, probes, "encoded-route-tester", interval)
+
+    # Per-route verdict: compare the plain status against the encoded forms.
+    log(c("1", "--- SUMMARY ---"))
+    for route in routes:
+        plain = results.get(forms[route]["plain"])
+        single_p = forms[route]["single"]
+        double_p = forms[route]["double"]
+
+        if single_p is None:
+            # Root route: baseline only, no encoding comparison possible.
+            log(
+                f"  {route.ljust(12)} "
+                f"plain={color_status(plain)}  ->  {c('90', 'baseline only (no segment to encode)')}"
+            )
+            continue
+
+        single = results.get(single_p)
+        double = results.get(double_p)
+
+        if "ERR" in (plain, single, double):
+            verdict = c("90", "request error - rerun")
+        elif plain == single == double:
+            verdict = c("32", "WAF normalizes encoding (all forms match)")
+        elif plain == single and single != double:
+            verdict = c("33", "single-decode only (double-encoded differs)")
+        else:
+            verdict = c("31", "WAF NOT normalizing (encoded form differs from plain)")
+
+        log(
+            f"  {route.ljust(12)} "
+            f"plain={color_status(plain)} "
+            f"single={color_status(single)} "
+            f"double={color_status(double)}  ->  {verdict}"
+        )
+
+
 def run_pass(target, interval):
     """Run one full pass of all tests."""
     test_encoded_slash(target, interval)
     test_encoded_index_html(target, interval)
+    test_encoded_pages(target, interval)
 
 
 def normalize_target(raw):
