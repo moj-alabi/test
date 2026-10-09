@@ -265,16 +265,21 @@ def acquire_waf_token(target, timeout=15):
     if not HAS_PLAYWRIGHT:
         log(c("33", "playwright not installed — skipping token acquisition"))
         log(c("90", "  install: pip install playwright && python -m playwright install chromium"))
-        return {}
+        return {}, None
 
     log(c("1", "=== WAF TOKEN ACQUISITION ==="))
     log(f"  Opening headless browser -> {target}")
     cookies = {}
+    browser_ua = None
     try:
         with sync_playwright() as pw:
             browser = pw.chromium.launch(headless=True)
             ctx = browser.new_context()
             page = ctx.new_page()
+
+            # Capture the browser's real User-Agent — WAF ties the token to
+            # the UA that solved the challenge, so probes MUST reuse it.
+            browser_ua = page.evaluate("() => navigator.userAgent")
 
             page.goto(target, wait_until="networkidle", timeout=timeout * 1000)
 
@@ -293,8 +298,10 @@ def acquire_waf_token(target, timeout=15):
 
     if not cookies:
         log(c("33", "  no aws-waf-token cookie found (WAF may not be challenging)"))
+    if browser_ua:
+        log(c("90", f"  browser UA: {browser_ua}"))
 
-    return cookies
+    return cookies, browser_ua
 
 
 def classify_source(status, headers):
@@ -328,22 +335,24 @@ def classify_source(status, headers):
     return "unknown"
 
 
-def run_probes(target, probes, ua, interval, cookies=None):
-    """Send each probe and print the real status + response-source signals.
+def run_probes(target, probes, session, interval):
+    """Send each probe through a persistent session and report real signals.
+
+    Uses a shared requests.Session so the WAF token cookie persists AND so
+    any rotated token WAF returns via Set-Cookie is picked up automatically
+    for the next request. The session's User-Agent is fixed (set by the
+    caller to match the browser that solved the challenge).
 
     Returns a dict mapping each probe to a record:
         {"status": <int|'ERR'>, "source": <label>, "waf": <action>,
          "server": <server hdr>, "x_cache": <x-cache hdr>}
-    so callers report what the server actually returned, not an inference.
     """
     width = max(len(p) for p in probes)
     results = {}
     for probe in probes:
         try:
-            r = requests.get(
+            r = session.get(
                 target + probe,
-                headers={"User-Agent": ua},
-                cookies=cookies or {},
                 timeout=5,
                 allow_redirects=False,
             )
@@ -385,7 +394,7 @@ def run_probes(target, probes, ua, interval, cookies=None):
     return results
 
 
-def test_encoded_pages(target, interval, cookies=None):
+def test_encoded_pages(target, interval, session):
     """Request real app routes plain and single-encoded, then compare.
 
     For each route we send two forms:
@@ -416,7 +425,7 @@ def test_encoded_pages(target, interval, cookies=None):
             probes.append(plain_p)
         forms[route] = {"plain": plain_p, "single": single_p}
 
-    results = run_probes(target, probes, next_ua(), interval, cookies)
+    results = run_probes(target, probes, session, interval)
 
     # Per-route summary: plain vs single-encoded.
     empty = {"status": None, "source": "-", "body_len": 0, "title": ""}
@@ -461,9 +470,9 @@ def test_encoded_pages(target, interval, cookies=None):
         )
 
 
-def run_pass(target, interval, cookies=None):
+def run_pass(target, interval, session):
     """Run one full pass of all tests."""
-    test_encoded_pages(target, interval, cookies)
+    test_encoded_pages(target, interval, session)
 
 
 def normalize_target(raw):
@@ -523,31 +532,55 @@ if __name__ == "__main__":
     print(c("90", "Examples: --rounds 5  |  --loop  |  --rounds 10 --delay 2"))
     print(c("1", "=" * 60) + "\n")
 
-    # --- Acquire WAF token via headless browser (unless --no-token) ---
-    cookies = {}
-    if not args.no_token:
-        if ensure_playwright():
-            cookies = acquire_waf_token(target)
-            if cookies:
-                log(c("32", f"Using WAF token cookie for all probes ({len(cookies)} cookie(s))"))
-            else:
-                log(c("33", "Proceeding without WAF token (may get challenged)"))
+    # Default UA used only when token acquisition is skipped/unavailable.
+    fallback_ua = next_ua()
+
+    def build_session():
+        """Create a persistent session seeded with a fresh WAF token.
+
+        A single Session reuses the connection and keeps a live cookie jar,
+        so the WAF token persists AND any rotated token WAF hands back via
+        Set-Cookie is applied to the next request automatically. The UA is
+        fixed to match the browser that solved the challenge — WAF ties the
+        token to that UA, so a mismatched/rotating UA invalidates it.
+        """
+        s = requests.Session()
+        token_cookies, browser_ua = ({}, None)
+        if not args.no_token and ensure_playwright():
+            token_cookies, browser_ua = acquire_waf_token(target)
+
+        # Fix the User-Agent for the whole session.
+        s.headers.update({"User-Agent": browser_ua or fallback_ua})
+
+        # Seed the token cookie(s) into the session jar.
+        for name, value in (token_cookies or {}).items():
+            s.cookies.set(name, value)
+
+        if token_cookies:
+            log(c("32", f"Session ready with WAF token ({len(token_cookies)} cookie(s)), UA fixed"))
+        elif args.no_token:
+            log(c("90", "Token acquisition skipped (--no-token)"))
         else:
-            log(c("33", "Playwright unavailable — proceeding without WAF token"))
-        print()
-    else:
-        log(c("90", "Token acquisition skipped (--no-token)"))
-        print()
+            log(c("33", "Proceeding without WAF token (may get challenged)"))
+        return s
+
+    session = build_session()
+    print()
 
     round_num = 0
     try:
         while True:
             round_num += 1
             log(c("1;35", f"########## ROUND {round_num} ##########"))
-            run_pass(target, args.interval, cookies)
+            run_pass(target, args.interval, session)
 
             if not args.loop and round_num >= args.rounds:
                 break
+
+            # Refresh the token/session before the next round so a rotated
+            # or expired token doesn't start triggering challenges mid-run.
+            if not args.no_token:
+                session = build_session()
             time.sleep(args.delay)
     except KeyboardInterrupt:
         print()
