@@ -1,0 +1,12 @@
+# Python build artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+
+# macOS Finder metadata
+.DS_Store
+
+# Common build output
+build/
+dist/
+*.egg-info/
