@@ -386,15 +386,14 @@ def run_probes(target, probes, ua, interval, cookies=None):
 
 
 def test_encoded_pages(target, interval, cookies=None):
-    """Request real app routes plain, single-encoded, and double-encoded.
+    """Request real app routes plain and single-encoded, then compare.
 
-    For each route we send three forms and compare the HTTP status:
-      - plain:         /login
-      - single-encoded segment:    /%6C%6F%67%69%6E
-      - double-encoded segment:    /%256C%256F...
-    If plain and encoded forms return the SAME status, the edge/WAF is
-    normalizing (decoding) the path before it decides. If they differ,
-    the WAF is matching the literal bytes and missing the encoded form.
+    For each route we send two forms:
+      - plain:          /login
+      - single-encoded: /%6C%6F%67%69%6E
+    If both return the same status and page, the origin decoded the
+    encoding and served real content — meaning encoded paths bypass
+    any WAF rule matching the plain string.
 
     The root route "/" has no segment to encode, so it is probed plain
     only as a reachability baseline.
@@ -402,36 +401,31 @@ def test_encoded_pages(target, interval, cookies=None):
     routes = ["/", "/teams", "/users", "/scoreboard", "/login", "/register"]
     log(c("1", "=== ENCODED REAL-ROUTE TEST ==="))
 
-    # Build the probe forms per route and remember which is which.
+    # Build the probe forms per route.
     probes = []
-    forms = {}  # route -> {"plain": probe, "single": probe|None, "double": probe|None}
+    forms = {}  # route -> {"plain": probe, "single": probe|None}
     for route in routes:
         plain_p = route
         segment = route.lstrip("/")               # 'login'; '' for root
         if segment:
             single = encode_all(segment)          # 'login' -> %6C%6F...
-            double = single.replace("%", "%25")   # double-encode: % -> %25
-            single_p, double_p = f"/{single}", f"/{double}"
-            probes.extend([plain_p, single_p, double_p])
+            single_p = f"/{single}"
+            probes.extend([plain_p, single_p])
         else:
-            single_p = double_p = None            # nothing to encode for "/"
+            single_p = None                       # nothing to encode for "/"
             probes.append(plain_p)
-        forms[route] = {"plain": plain_p, "single": single_p, "double": double_p}
+        forms[route] = {"plain": plain_p, "single": single_p}
 
     results = run_probes(target, probes, next_ua(), interval, cookies)
 
-    # Per-route summary: report the REAL status + response source for each
-    # form (plain / single / double), plus whether the response body matches
-    # the plain form (same title / similar body size = same page served).
+    # Per-route summary: plain vs single-encoded.
     empty = {"status": None, "source": "-", "body_len": 0, "title": ""}
     log(c("1", "--- SUMMARY (status | source | page served?) ---"))
     for route in routes:
         plain = results.get(forms[route]["plain"], empty)
         single_p = forms[route]["single"]
-        double_p = forms[route]["double"]
 
         if single_p is None:
-            # Root route: baseline only, no encoding comparison possible.
             log(
                 f"  {route.ljust(12)} "
                 f"plain={color_status(plain['status'])} [{plain['source']}] "
@@ -440,7 +434,6 @@ def test_encoded_pages(target, interval, cookies=None):
             continue
 
         single = results.get(single_p, empty)
-        double = results.get(double_p, empty)
 
         def page_match(base, variant):
             """Check if variant served the same page as the plain request.
@@ -449,7 +442,6 @@ def test_encoded_pages(target, interval, cookies=None):
                 return c("31", "DIFFERENT status"), False
             if base["title"] and variant["title"] and base["title"] == variant["title"]:
                 return c("32", "SAME PAGE (title match)"), True
-            # No title or titles differ — fall back to body-size heuristic.
             if base["body_len"] > 0 and variant["body_len"] > 0:
                 ratio = variant["body_len"] / base["body_len"]
                 if 0.8 <= ratio <= 1.2:
@@ -458,18 +450,14 @@ def test_encoded_pages(target, interval, cookies=None):
             return c("90", "inconclusive"), False
 
         single_match, single_same = page_match(plain, single)
-        double_match, double_same = page_match(plain, double)
         stats.record_page_comparison(single_same)
-        stats.record_page_comparison(double_same)
 
         log(
             f"  {route.ljust(12)}\n"
-            f"      plain : {color_status(plain['status'])} [{plain['source']}]  "
+            f"      plain  : {color_status(plain['status'])} [{plain['source']}]  "
             f"{plain['body_len']}B  title=\"{plain['title']}\"\n"
-            f"      single: {color_status(single['status'])} [{single['source']}]  "
-            f"{single['body_len']}B  title=\"{single['title']}\"  ->  {single_match}\n"
-            f"      double: {color_status(double['status'])} [{double['source']}]  "
-            f"{double['body_len']}B  title=\"{double['title']}\"  ->  {double_match}"
+            f"      encoded: {color_status(single['status'])} [{single['source']}]  "
+            f"{single['body_len']}B  title=\"{single['title']}\"  ->  {single_match}"
         )
 
 
