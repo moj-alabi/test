@@ -50,7 +50,14 @@ class ProbeStats:
         self.origin_served = 0        # reached origin
         self.same_page = 0            # encoded form served same page as plain
         self.different_page = 0       # encoded form served different content
+        self.skipped_comparisons = 0  # a probe in the pair never completed
         self.unique_paths = set()     # unique probe paths seen
+        # Comparison accounting — kept consistent even if Ctrl+C interrupts
+        # a round mid-way. completed_comparisons = same + different, and
+        # routes_per_round lets us report "X of Y possible".
+        self.routes_per_round = 0     # encoded routes compared per full round
+        self.rounds_started = 0       # rounds that began probing
+        self.rounds_completed = 0     # rounds whose comparison pass finished
 
     def record(self, probe, result):
         """Record a single probe result."""
@@ -70,11 +77,22 @@ class ProbeStats:
             self.origin_served += 1
 
     def record_page_comparison(self, is_same):
-        """Record whether an encoded probe served the same page as plain."""
+        """Record whether an encoded probe served the same page as plain.
+
+        Called once per encoded route as its comparison is computed, so an
+        interrupted round still contributes whatever comparisons completed
+        before the interrupt.
+        """
         if is_same:
             self.same_page += 1
         else:
             self.different_page += 1
+
+    def record_skipped_comparison(self):
+        """Record a comparison that couldn't run because a probe in the
+        pair never completed (e.g. Ctrl+C mid-round). NOT a 'different'
+        result — just unmeasured."""
+        self.skipped_comparisons += 1
 
     def print_summary(self, round_count, target):
         """Print a high-level summary of everything observed."""
@@ -83,7 +101,10 @@ class ProbeStats:
         print(c("1", "FINAL SUMMARY"))
         print(c("1", "=" * 60))
         print(f"  Target:         {target}")
-        print(f"  Rounds:         {round_count}")
+        rounds_note = f"{self.rounds_completed} completed"
+        if self.rounds_started > self.rounds_completed:
+            rounds_note += f", {self.rounds_started - self.rounds_completed} interrupted"
+        print(f"  Rounds:         {round_count} started ({rounds_note})")
         print(f"  Total probes:   {self.total_probes}")
         print(f"  Unique paths:   {len(self.unique_paths)}")
         print()
@@ -109,9 +130,21 @@ class ProbeStats:
         # Page-match results (the real answer to "did the server interpret it?")
         comparisons = self.same_page + self.different_page
         if comparisons > 0:
+            # Explain the accounting: comparisons actually made vs the full
+            # budget. If a round was interrupted mid-way, "made" will be
+            # less than "possible", which is why same+different may not be
+            # an exact multiple of the per-round route count.
+            possible = self.rounds_started * self.routes_per_round
+            unaccounted = possible - comparisons - self.skipped_comparisons
             print(c("1", "  Encoding vs. plain (did the server serve the same page?):"))
+            print(f"    Comparisons made:      {comparisons} of {possible} possible "
+                  f"({self.routes_per_round} encoded route(s) x {self.rounds_started} round(s) started)")
             print(f"    Same page served:      {c('32' if self.same_page == 0 else '31', str(self.same_page))}")
             print(f"    Different response:    {c('32', str(self.different_page))}")
+            if self.skipped_comparisons > 0:
+                print(f"    Skipped (incomplete):  {c('90', str(self.skipped_comparisons))}  (probe missing — not measured)")
+            if unaccounted > 0:
+                print(c("90", f"    Not reached:           {unaccounted}  (round interrupted before these routes)"))
             print()
             if self.same_page > 0:
                 print(c("31", "    ⚠  RISK: Encoded paths served the SAME real page as plain."))
@@ -413,6 +446,7 @@ def test_encoded_pages(target, interval, session):
     # Build the probe forms per route.
     probes = []
     forms = {}  # route -> {"plain": probe, "single": probe|None}
+    encoded_route_count = 0
     for route in routes:
         plain_p = route
         segment = route.lstrip("/")               # 'login'; '' for root
@@ -420,10 +454,16 @@ def test_encoded_pages(target, interval, session):
             single = encode_all(segment)          # 'login' -> %6C%6F...
             single_p = f"/{single}"
             probes.extend([plain_p, single_p])
+            encoded_route_count += 1
         else:
             single_p = None                       # nothing to encode for "/"
             probes.append(plain_p)
         forms[route] = {"plain": plain_p, "single": single_p}
+
+    # Register this round's comparison budget before any probes run, so the
+    # final summary can report "X of Y possible" even if Ctrl+C interrupts.
+    stats.routes_per_round = encoded_route_count
+    stats.rounds_started += 1
 
     results = run_probes(target, probes, session, interval)
 
@@ -443,6 +483,14 @@ def test_encoded_pages(target, interval, session):
             continue
 
         single = results.get(single_p, empty)
+
+        # If either probe never completed (round interrupted by Ctrl+C mid
+        # way), skip the comparison entirely rather than recording a bogus
+        # "different" result — keeps the same/different counts honest.
+        if plain.get("status") is None or single.get("status") is None:
+            log(c("90", f"  {route.ljust(12)}  (incomplete — probe missing, skipped)"))
+            stats.record_skipped_comparison()
+            continue
 
         def page_match(base, variant):
             """Check if variant served the same page as the plain request.
@@ -468,6 +516,9 @@ def test_encoded_pages(target, interval, session):
             f"      encoded: {color_status(single['status'])} [{single['source']}]  "
             f"{single['body_len']}B  title=\"{single['title']}\"  ->  {single_match}"
         )
+
+    # Mark the round's comparison pass as fully completed.
+    stats.rounds_completed += 1
 
 
 def run_pass(target, interval, session):
