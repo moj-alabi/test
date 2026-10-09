@@ -385,34 +385,6 @@ def run_probes(target, probes, ua, interval, cookies=None):
     return results
 
 
-def test_encoded_slash(target, interval, cookies=None):
-    """Fully encode "/" and report the HTTP status for each probe."""
-    log(c("1", "=== ENCODED SLASH TEST ==="))
-    encoded = encode_all("/")  # "%2F"
-    log(f"  encoded '/' -> {encoded}")
-
-    probes = [
-        f"/api{encoded}v1{encoded}users",
-        f"/{encoded}{encoded}etc{encoded}passwd",
-        f"/admin{encoded}config",
-    ]
-    run_probes(target, probes, next_ua(), interval, cookies)
-
-
-def test_encoded_index_html(target, interval, cookies=None):
-    """Fully encode "index.html" and report the HTTP status for each probe."""
-    log(c("1", "=== ENCODED index.html TEST ==="))
-    encoded = encode_all("index.html")  # every char encoded
-    log(f"  encoded 'index.html' -> {encoded}")
-
-    probes = [
-        f"/{encoded}",
-        f"/public/{encoded}",
-        f"/../{encoded}",
-    ]
-    run_probes(target, probes, next_ua(), interval, cookies)
-
-
 def test_encoded_pages(target, interval, cookies=None):
     """Request real app routes plain, single-encoded, and double-encoded.
 
@@ -503,8 +475,6 @@ def test_encoded_pages(target, interval, cookies=None):
 
 def run_pass(target, interval, cookies=None):
     """Run one full pass of all tests."""
-    test_encoded_slash(target, interval, cookies)
-    test_encoded_index_html(target, interval, cookies)
     test_encoded_pages(target, interval, cookies)
 
 
