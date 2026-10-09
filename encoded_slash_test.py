@@ -256,9 +256,14 @@ def encode_all(value):
     return "".join(f"%{b:02X}" for b in value.encode("utf-8"))
 
 
-# --- Realistic browser User-Agent strings (rotated per test) ---
+# --- Legitimate desktop + mobile browser User-Agent strings ---
+# These are real, current UAs from genuine (non-headless) browsers. None
+# contain the "HeadlessChrome" token that marks an automated browser.
+# NOTE: this pool is only a FALLBACK for --no-token runs. When a token is
+# acquired, the actual headless browser's real UA is pinned instead.
 _REALISTIC_UAS = [
-    # Chrome on Windows
+    # --- Desktop ---
+    # Chrome on Windows 10/11
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
     # Chrome on macOS
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
@@ -268,8 +273,15 @@ _REALISTIC_UAS = [
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15",
     # Edge on Windows
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 Edg/126.0.0.0",
-    # Chrome on Linux
-    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+    # --- Mobile ---
+    # Safari on iPhone (iOS 17)
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1",
+    # Chrome on Android
+    "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36",
+    # Samsung Internet on Android
+    "Mozilla/5.0 (Linux; Android 14; SM-S918B) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/25.0 Chrome/121.0.0.0 Mobile Safari/537.36",
+    # Safari on iPad (iPadOS 17)
+    "Mozilla/5.0 (iPad; CPU OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1",
 ]
 _ua_cycle = cycle(_REALISTIC_UAS)
 
