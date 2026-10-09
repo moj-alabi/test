@@ -45,9 +45,7 @@ class ProbeStats:
         self.total_probes = 0
         self.status_counts = {}       # status_code -> count
         self.source_counts = {}       # source label -> count
-        self.challenged = 0           # WAF challenge / CAPTCHA
-        self.blocked = 0              # WAF / edge block (403)
-        self.rate_limited = 0         # 429
+        self.challenged = 0           # WAF intercepted (challenge/captcha)
         self.errors = 0               # request failures
         self.origin_served = 0        # reached origin
         self.same_page = 0            # encoded form served same page as plain
@@ -66,12 +64,8 @@ class ProbeStats:
 
         if status == "ERR":
             self.errors += 1
-        elif status == 202 or "challenge" in source.lower() or "captcha" in source.lower():
+        elif "WAF" in source:
             self.challenged += 1
-        elif status == 429:
-            self.rate_limited += 1
-        elif status == 403 and "origin" not in source.lower():
-            self.blocked += 1
         elif "origin" in source.lower():
             self.origin_served += 1
 
@@ -95,12 +89,13 @@ class ProbeStats:
         print()
 
         # Response breakdown
-        print(c("1", "  Response breakdown:"))
-        print(f"    Reached origin:   {c('32', str(self.origin_served))}")
-        print(f"    WAF challenged:   {c('33', str(self.challenged))}")
-        print(f"    WAF blocked:      {c('31', str(self.blocked))}")
-        print(f"    Rate limited:     {c('33', str(self.rate_limited))}")
-        print(f"    Errors:           {c('90', str(self.errors))}")
+        print(c("1", "  Response source breakdown:"))
+        print(f"    Reached origin:     {c('32', str(self.origin_served))}")
+        print(f"    WAF intercepted:    {c('33', str(self.challenged))}")
+        print(f"    Request errors:     {c('90', str(self.errors))}")
+        other = self.total_probes - self.origin_served - self.challenged - self.errors
+        if other > 0:
+            print(f"    Other (edge/unknown): {other}")
         print()
 
         # Status code distribution
@@ -128,20 +123,17 @@ class ProbeStats:
                 print(c("90", "       Origin rejected the encoded forms (404/different content)."))
             print()
 
-        # Reached-origin check (for sensitive/encoded paths that should have
-        # been blocked at the edge before ever touching the origin).
-        if self.origin_served > 0 and (self.blocked + self.challenged) == 0:
-            print(c("33", "    ⚠  NOTE: Every probe reached the origin — none were blocked or"))
-            print(c("33", "       challenged at the edge. If any probed path should be WAF-blocked"))
-            print(c("33", "       (e.g. traversal, admin), the WAF is not catching them."))
+        # Reached-origin check — did the WAF/edge stop anything?
+        if self.origin_served > 0 and self.challenged == 0:
+            print(c("33", "    ⚠  NOTE: Every probe reached the origin — none were intercepted"))
+            print(c("33", "       by the WAF. Check your WAF rules if any paths should be blocked."))
             print()
-        elif self.blocked > 0 or self.challenged > 0:
-            total_stopped = self.blocked + self.challenged
-            print(f"    Edge stopped {total_stopped} probe(s) (blocked: {self.blocked}, challenged: {self.challenged})")
+        elif self.challenged > 0:
+            print(f"    WAF intercepted {self.challenged} probe(s)")
             if self.origin_served > 0:
                 print(c("33", f"    ⚠  But {self.origin_served} probe(s) still reached origin."))
             else:
-                print(c("32", "    ✓  No probes reached the origin — edge caught everything."))
+                print(c("32", "    ✓  No probes reached the origin — WAF caught everything."))
             print()
 
         # Source breakdown
@@ -306,34 +298,34 @@ def acquire_waf_token(target, timeout=15):
 
 
 def classify_source(status, headers):
-    """Classify who actually produced the response, from real signals.
+    """Identify WHO produced the response: origin server or WAF/edge.
 
-    Reads the status code plus AWS WAF / CloudFront response headers rather
-    than guessing. Returns a short human label.
-      - x-amzn-waf-action: challenge|captcha  -> WAF intercepted (status 202)
-      - status 403 with no origin server hdr  -> WAF/edge block
-      - server: Apache (or origin present)    -> reached origin
-      - x-cache: 'Error from cloudfront'       -> edge-generated error
+    Only reports the source — does NOT interpret the status code's meaning.
+    The status code (200, 403, 404, etc.) speaks for itself; the user knows
+    whether a 403 is an auth gate or a WAF block from context.
+
+    Uses concrete header signals:
+      - x-amzn-waf-action header  -> WAF intercepted (challenge/captcha)
+      - server: Apache/nginx/etc  -> reached origin
+      - x-cache / via headers     -> CloudFront edge involvement
     """
     waf_action = headers.get("x-amzn-waf-action", "").lower()
     server = headers.get("server", "")
     x_cache = headers.get("x-cache", "")
 
+    # WAF explicitly intercepted (challenge/captcha action).
     if waf_action in ("challenge", "captcha"):
-        return f"WAF {waf_action} (x-amzn-waf-action)"
-    if status == 202:
-        return "WAF/edge challenge (202)"
-    if status == 429:
-        return "rate limited (429)"
-    if status == 403 and "apache" not in server.lower():
-        return "WAF/edge block (403, no origin)"
-    if "error from cloudfront" in x_cache.lower():
-        return f"edge error ({x_cache})"
+        return f"WAF {waf_action}"
+
+    # Origin server identified — the request reached your server.
     if server:
         return f"origin ({server})"
+
+    # No server header but CloudFront is in the chain.
     if x_cache:
-        return f"edge ({x_cache})"
-    return "unknown source"
+        return f"via CloudFront ({x_cache})"
+
+    return "unknown"
 
 
 def run_probes(target, probes, ua, interval, cookies=None):
