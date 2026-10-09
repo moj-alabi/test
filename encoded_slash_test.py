@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """
+https://dnh9gohi236m8.cloudfront.net/login
 Standalone encoded-value test.
 
 Percent-encodes EVERY character of a value and checks the HTTP status
