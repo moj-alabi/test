@@ -206,49 +206,78 @@ stats = ProbeStats()
 _print_lock = threading.Lock()
 
 
-def ensure_playwright():
-    """Check for playwright + chromium; install automatically if missing.
-
-    Returns True if playwright is ready to use, False otherwise.
-    """
-    global HAS_PLAYWRIGHT, sync_playwright
-    import subprocess
-
-    # 1. Check if the playwright package is installed.
-    if not HAS_PLAYWRIGHT:
-        print("[setup] playwright not found — installing...")
-        try:
-            subprocess.check_call(
-                [sys.executable, "-m", "pip", "install", "playwright", "-q"],
-                stdout=subprocess.DEVNULL,
-            )
-            from playwright.sync_api import sync_playwright as _pw
-            sync_playwright = _pw
-            HAS_PLAYWRIGHT = True
-            print("[setup] playwright package installed.")
-        except Exception as e:
-            print(f"[setup] failed to install playwright: {e}")
-            return False
-
-    # 2. Check if the chromium browser binary is present.
-    #    `playwright install --dry-run` isn't available, so we try importing
-    #    and launching; a missing-browser error triggers the install.
-    try:
-        with sync_playwright() as pw:
-            browser = pw.chromium.launch(headless=True)
-            browser.close()
-    except Exception:
-        print("[setup] chromium browser not found — installing (one-time download)...")
-        try:
-            subprocess.check_call(
-                [sys.executable, "-m", "playwright", "install", "chromium"],
-            )
-            print("[setup] chromium installed.")
-        except Exception as e:
-            print(f"[setup] failed to install chromium: {e}")
-            return False
-
-    return True
+ def ensure_playwright():
+      """Check for playwright + chromium; install automatically if missing.
+  
+      Returns True if playwright is ready to use, False otherwise.
+      """
+      global HAS_PLAYWRIGHT, sync_playwright
+      import os
+      import subprocess
+  
+      # 1. Check if the playwright package is installed.
+      if not HAS_PLAYWRIGHT:
+          print("[setup] playwright not found — installing...")
+          try:
+              subprocess.check_call(
+                  [sys.executable, "-m", "pip", "install", "playwright", "-q"],
+                  stdout=subprocess.DEVNULL,
+              )
+              from playwright.sync_api import sync_playwright as _pw
+              sync_playwright = _pw
+              HAS_PLAYWRIGHT = True
+              print("[setup] playwright package installed.")
+          except Exception as e:
+              print(f"[setup] failed to install playwright: {e}")
+              return False
+  
+      # Strip proxychains' LD_PRELOAD (and friends) so it doesn't get injected
+      # into Chromium's child processes and break their local IPC.
+      clean_env = {
+          k: v
+          for k, v in os.environ.items()
+          if k not in ("LD_PRELOAD", "LD_LIBRARY_PATH") and not k.startswith("PROXYCHAINS_")
+      }
+  
+      # Standard headless-Linux launch args: disable GPU process and sandbox
+      # restrictions that crash without a real display/driver stack.
+      launch_args = {
+          "headless": True,
+          "env": clean_env,
+          "args": [
+              "--disable-gpu",
+              "--disable-software-rasterizer",
+              "--disable-dev-shm-usage",
+              "--no-sandbox",
+          ],
+      }
+  
+      # 2. Check if the chromium browser binary is present.
+      #    `playwright install --dry-run` isn't available, so we try importing
+      #    and launching; a missing-browser error triggers the install.
+      try:
+          with sync_playwright() as pw:
+              browser = pw.chromium.launch(**launch_args)
+              browser.close()
+      except Exception as e:
+          # Only treat this as a "missing browser" case if that's actually
+          # what the error says; otherwise the GPU/env fix above should have
+          # resolved it and a different failure here is worth seeing.
+          if "Executable doesn't exist" in str(e) or "playwright install" in str(e):
+              print("[setup] chromium browser not found — installing (one-time download)...")
+              try:
+                  subprocess.check_call(
+                      [sys.executable, "-m", "playwright", "install", "chromium"],
+                  )
+                  print("[setup] chromium installed.")
+              except Exception as install_err:
+                  print(f"[setup] failed to install chromium: {install_err}")
+                  return False
+          else:
+              print(f"[setup] chromium launch check failed: {e}")
+              return False
+  
+      return True
 
 # --- ANSI colors (auto-disabled when output is not a TTY) ---
 USE_COLOR = sys.stdout.isatty()
